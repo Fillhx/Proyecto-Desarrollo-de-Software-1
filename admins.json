@@ -1,0 +1,7 @@
+{
+    "admin@ranyave.com": {
+        "password": "admin123",
+        "role": "admin",
+        "name": "Administrador"
+    }
+}

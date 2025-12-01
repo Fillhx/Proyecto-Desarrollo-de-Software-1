@@ -1,0 +1,14 @@
+{
+    "user@example.com": {
+        "password": "user123",
+        "role": "user",
+        "name": "Usuario"
+    },
+    "gustavorestrepo54321@gmail.com": {
+        "name": "gustavo",
+        "email": "gustavorestrepo54321@gmail.com",
+        "phone": "3112887019",
+        "password": "gustabayern7",
+        "role": "user"
+    }
+}
