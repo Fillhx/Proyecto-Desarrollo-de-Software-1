@@ -1,6 +1,6 @@
 {
-    "user@example.com": {
-        "password": "user123",
+    "321": {
+        "password": "321",
         "role": "user",
         "name": "Usuario"
     },

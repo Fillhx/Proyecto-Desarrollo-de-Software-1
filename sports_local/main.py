@@ -4,125 +4,24 @@ import re
 import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, 
                              QVBoxLayout, QLabel, QLineEdit, QPushButton, QFrame, 
-                             QMessageBox, QStackedWidget, QCalendarWidget, QTimeEdit, QDialog)
+                             QMessageBox, QStackedWidget, QTableWidget, QTableWidgetItem,
+                             QHeaderView, QDialog, QFormLayout, QComboBox, QSpinBox,
+                             QDateEdit, QTimeEdit, QDoubleSpinBox)
 from PyQt5.QtGui import QFont, QColor, QPixmap, QPainter, QPen
 from PyQt5.QtCore import Qt, QDate, QTime
 from PIL import Image, ImageDraw
 import io
+import uuid  # Para generar IDs únicos
+import database  # Importar módulo de base de datos
 
 # ============================================================================
 # CONFIGURACIÓN: Ruta de la imagen del lado izquierdo
 # ============================================================================
 IMAGE_PATH = "assets/logo_ranyave.png"  # Cambia esta ruta a tu imagen
-USERS_FILE = "users.json"  # Archivo para guardar usuarios registrados
-ADMINS_FILE = "admins.json"  # Archivo para guardar administradores
-STAGES_FILE = "stages.json"  # Archivo para guardar etapas deportivas
-EVENTS_FILE = "events.json"  # Archivo para guardar eventos
 # ============================================================================
 
-def load_users_from_file():
-    """Carga usuarios registrados desde archivo JSON"""
-    if os.path.exists(USERS_FILE):
-        try:
-            with open(USERS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def load_admins_from_file():
-    """Carga administradores desde archivo JSON"""
-    if os.path.exists(ADMINS_FILE):
-        try:
-            with open(ADMINS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_users_to_file(users):
-    """Guarda usuarios registrados en archivo JSON"""
-    try:
-        with open(USERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(users, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"Error guardando usuarios: {e}")
-
-def save_admins_to_file(admins):
-    """Guarda administradores en archivo JSON"""
-    try:
-        with open(ADMINS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(admins, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"Error guardando admins: {e}")
-
-def load_stages_from_file():
-    """Carga etapas deportivas desde archivo JSON"""
-    if os.path.exists(STAGES_FILE):
-        try:
-            with open(STAGES_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_stages_to_file(stages):
-    """Guarda etapas deportivas en archivo JSON"""
-    try:
-        with open(STAGES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(stages, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"Error guardando etapas: {e}")
-
-def load_events_from_file():
-    """Carga eventos desde archivo JSON"""
-    if os.path.exists(EVENTS_FILE):
-        try:
-            with open(EVENTS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_events_to_file(events):
-    """Guarda eventos en archivo JSON"""
-    try:
-        with open(EVENTS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(events, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"Error guardando eventos: {e}")
-
-def create_default_users():
-    """Crea usuarios predefinidos si no existen"""
-    default_admins = {
-        "admin@ranyave.com": {
-            "password": "admin123",
-            "role": "admin",
-            "name": "Administrador"
-        }
-    }
-    
-    default_users = {
-        "user@example.com": {
-            "password": "user123",
-            "role": "user",
-            "name": "Usuario"
-        }
-    }
-    
-    # Crear archivos si no existen
-    if not os.path.exists(ADMINS_FILE):
-        save_admins_to_file(default_admins)
-    
-    if not os.path.exists(USERS_FILE):
-        save_users_to_file(default_users)
-
-# Cargar usuarios al iniciar
-create_default_users()
-USERS_DB = load_admins_from_file()
-REGISTERED_USERS = load_users_from_file()
-STAGES_DB = load_stages_from_file()
-EVENTS_DB = load_events_from_file()
+# Inicializar base de datos
+database.init_db()
 
 def show_styled_message(parent, title, message, message_type="information"):
     """Muestra un mensaje con estilo personalizado (fondo blanco)"""
@@ -162,7 +61,97 @@ def show_styled_message(parent, title, message, message_type="information"):
     
     msg_box.exec_()
 
-class LoginWidget(QWidget):
+class BasePage(QWidget):
+    """Clase base para páginas con fondo decorado"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("background-color: #1e3a5f;")
+
+    def paintEvent(self, event):
+        """Pinta el fondo con líneas decorativas"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Fondo azul
+        painter.fillRect(self.rect(), QColor(30, 58, 95))
+        
+        # Líneas diagonales decorativas
+        pen = QPen(QColor(255, 255, 255), 2)
+        painter.setPen(pen)
+        
+        w = self.width()
+        h = self.height()
+        
+        # Líneas estilo "Ranyave" (diagonales desde las esquinas)
+        # Esquina superior izquierda
+        painter.drawLine(0, 100, 100, 0)
+        painter.drawLine(0, 200, 200, 0)
+        
+        # Esquina inferior derecha
+        painter.drawLine(w, h-100, w-100, h)
+        painter.drawLine(w, h-200, w-200, h)
+        
+        # Esquina superior derecha
+        painter.drawLine(w, 100, w-100, 0)
+        
+        # Esquina inferior izquierda
+        painter.drawLine(0, h-100, 100, h)
+
+    @staticmethod
+    def get_input_style():
+        return """
+            QLineEdit, QComboBox, QDateEdit, QTimeEdit, QSpinBox {
+                background-color: transparent;
+                border: 2px solid white;
+                border-radius: 0px;
+                padding: 8px;
+                font-size: 16px;
+                color: white;
+                font-family: Arial;
+            }
+            QLineEdit::placeholder {
+                color: rgba(255, 255, 255, 180);
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 2px solid white;
+                border-top: 2px solid white;
+                width: 10px;
+                height: 10px;
+                margin-right: 10px;
+                transform: rotate(45deg);
+            }
+        """
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: white;
+                color: #1e3a5f;
+                border: none;
+                border-radius: 20px;
+                padding: 10px 30px;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: Arial;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """
+    
+    @staticmethod
+    def get_label_style():
+        return "color: white; font-size: 18px; font-family: Arial; font-weight: bold;"
+
+class LoginWidget(BasePage):
     """Pantalla de Login"""
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -191,77 +180,75 @@ class LoginWidget(QWidget):
         
         left_layout.addWidget(image_label)
         left_panel.setLayout(left_layout)
-        left_panel.setStyleSheet("background-color: #1e3a5f;")
+        # left_panel.setStyleSheet("background-color: #1e3a5f;") # Ya no es necesario, BasePage lo maneja
         
         # Panel derecho (formulario)
         right_panel = QWidget()
         right_layout = QVBoxLayout()
-        right_layout.setSpacing(15)
-        right_layout.setContentsMargins(60, 60, 60, 60)
+        right_layout.setSpacing(20)
+        right_layout.setContentsMargins(80, 60, 80, 60)
         
         # Título
         title = QLabel("LOGIN")
-        title_font = QFont("Arial", 28, QFont.Bold)
+        title_font = QFont("Arial", 36, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(title)
         
-        right_layout.addSpacing(30)
+        right_layout.addSpacing(40)
         
         # Email/Usuario
         email_label = QLabel("Email")
-        email_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
+        email_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Ingresa tu email")
+        self.email_input.setPlaceholderText("")
         self.email_input.setStyleSheet(self.get_input_style())
-        self.email_input.setMinimumHeight(40)
+        self.email_input.setMinimumHeight(45)
         right_layout.addWidget(self.email_input)
         
         # Contraseña
         password_label = QLabel("Password")
-        password_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
+        password_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(password_label)
         
         self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Ingresa tu contraseña")
+        self.password_input.setPlaceholderText("")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setStyleSheet(self.get_input_style())
-        self.password_input.setMinimumHeight(40)
+        self.password_input.setMinimumHeight(45)
         right_layout.addWidget(self.password_input)
         
-        right_layout.addSpacing(20)
+        right_layout.addSpacing(30)
         
         # Botones
-        buttons_layout = QHBoxLayout()
+        buttons_layout = QVBoxLayout() # Cambiado a vertical para coincidir más con el estilo general
         buttons_layout.setSpacing(15)
+        buttons_layout.setAlignment(Qt.AlignCenter)
         
         next_btn = QPushButton("Next")
-        next_btn.setFont(QFont("Arial", 12, QFont.Bold))
         next_btn.setStyleSheet(self.get_button_style())
-        next_btn.setMinimumWidth(120)
-        next_btn.setMinimumHeight(40)
+        next_btn.setMinimumWidth(150)
+        next_btn.setMinimumHeight(45)
         next_btn.clicked.connect(self.on_login)
         buttons_layout.addWidget(next_btn)
         
         back_btn = QPushButton("Back")
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(40)
+        back_btn.setMinimumWidth(150)
+        back_btn.setMinimumHeight(45)
         back_btn.clicked.connect(self.on_back)
         buttons_layout.addWidget(back_btn)
         
-        buttons_layout.addStretch()
         right_layout.addLayout(buttons_layout)
         
         right_layout.addSpacing(20)
         
         # Link a registro
-        register_label = QLabel("¿No tienes cuenta? <a href='#' style='color: #87CEEB; text-decoration: none;'><b>Regístrate aquí</b></a>")
-        register_label.setStyleSheet("color: white; font-size: 11px;")
+        register_label = QLabel("¿No tienes cuenta? <a href='#' style='color: white; text-decoration: underline;'><b>Regístrate aquí</b></a>")
+        register_label.setStyleSheet("color: white; font-size: 12px;")
         register_label.setAlignment(Qt.AlignCenter)
         register_label.linkActivated.connect(self.on_register_link)
         right_layout.addWidget(register_label)
@@ -269,13 +256,12 @@ class LoginWidget(QWidget):
         right_layout.addStretch()
         
         right_panel.setLayout(right_layout)
-        right_panel.setStyleSheet("background-color: #1e3a5f;")
         
         main_layout.addWidget(left_panel, 1)
         main_layout.addWidget(right_panel, 1)
         
         self.setLayout(main_layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
+
     
     def on_login(self):
         email = self.email_input.text().strip()
@@ -291,21 +277,13 @@ class LoginWidget(QWidget):
             return
         
         # Verificar en BD
-        if email in USERS_DB:
-            user = USERS_DB[email]
-            if user["password"] == password:
-                # Login exitoso
-                role = user["role"]
-                name = user["name"]
-                self.parent_window.login_user(name, role)
-                return
-        
-        # Verificar en usuarios registrados
-        if email in REGISTERED_USERS:
-            user = REGISTERED_USERS[email]
-            if user["password"] == password:
-                self.parent_window.login_user(user["name"], "user")
-                return
+        user = database.get_user(email)
+        if user and user["password"] == password:
+            # Login exitoso
+            role = user["role"]
+            name = user["name"]
+            self.parent_window.login_user(name, role)
+            return
         
         show_styled_message(self, "Error", "Email o contraseña incorrectos", "warning")
         self.clear_fields()
@@ -317,6 +295,7 @@ class LoginWidget(QWidget):
         self.parent_window.show_register()
     
     def is_valid_email(self, email):
+        if email in ["123", "1234"]: return True
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return re.match(pattern, email) is not None
     
@@ -369,9 +348,9 @@ class LoginWidget(QWidget):
                 border: none;
                 border-bottom: 2px solid white;
                 padding: 8px 5px;
-                font-size: 12px;
+                font-size: 16px;
                 color: white;
-                font-style: italic;
+                font-family: Arial;
             }
             QLineEdit::placeholder {
                 color: rgba(255, 255, 255, 100);
@@ -392,7 +371,6 @@ class LoginWidget(QWidget):
                 border-radius: 20px;
                 padding: 10px 20px;
                 font-weight: bold;
-                cursor: pointer;
             }
             QPushButton:hover {
                 background-color: #e0e0e0;
@@ -403,7 +381,7 @@ class LoginWidget(QWidget):
         """
 
 
-class RegisterWidget(QWidget):
+class RegisterWidget(BasePage):
     """Pantalla de Registro"""
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -432,17 +410,17 @@ class RegisterWidget(QWidget):
         
         left_layout.addWidget(image_label)
         left_panel.setLayout(left_layout)
-        left_panel.setStyleSheet("background-color: #1e3a5f;")
+        # left_panel.setStyleSheet("background-color: #1e3a5f;") # BasePage
         
         # Panel derecho (formulario)
         right_panel = QWidget()
         right_layout = QVBoxLayout()
-        right_layout.setSpacing(12)
-        right_layout.setContentsMargins(60, 40, 60, 40)
+        right_layout.setSpacing(15)
+        right_layout.setContentsMargins(80, 40, 80, 40)
         
         # Título
         title = QLabel("REGISTER")
-        title_font = QFont("Arial", 28, QFont.Bold)
+        title_font = QFont("Arial", 36, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
@@ -452,88 +430,82 @@ class RegisterWidget(QWidget):
         
         # Nombre
         name_label = QLabel("Name")
-        name_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
+        name_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(name_label)
         
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Name")
+        self.name_input.setPlaceholderText("")
         self.name_input.setStyleSheet(self.get_input_style())
-        self.name_input.setMinimumHeight(35)
+        self.name_input.setMinimumHeight(40)
         right_layout.addWidget(self.name_input)
         
         # Email
         email_label = QLabel("Email")
-        email_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
+        email_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Email")
+        self.email_input.setPlaceholderText("")
         self.email_input.setStyleSheet(self.get_input_style())
-        self.email_input.setMinimumHeight(35)
+        self.email_input.setMinimumHeight(40)
         right_layout.addWidget(self.email_input)
         
         # Teléfono
         phone_label = QLabel("Cell Phone Number")
-        phone_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
+        phone_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(phone_label)
         
         self.phone_input = QLineEdit()
-        self.phone_input.setPlaceholderText("Cell Phone Number")
+        self.phone_input.setPlaceholderText("")
         self.phone_input.setStyleSheet(self.get_input_style())
-        self.phone_input.setMinimumHeight(35)
+        self.phone_input.setMinimumHeight(40)
         right_layout.addWidget(self.phone_input)
         
         # Contraseña
         password_label = QLabel("Password")
-        password_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
+        password_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(password_label)
         
         self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Password")
+        self.password_input.setPlaceholderText("")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setStyleSheet(self.get_input_style())
-        self.password_input.setMinimumHeight(35)
+        self.password_input.setMinimumHeight(40)
         right_layout.addWidget(self.password_input)
         
-        right_layout.addSpacing(15)
+        right_layout.addSpacing(20)
         
         # Botones
-        buttons_layout = QHBoxLayout()
+        buttons_layout = QVBoxLayout()
         buttons_layout.setSpacing(15)
+        buttons_layout.setAlignment(Qt.AlignCenter)
         
         next_btn = QPushButton("Next")
-        next_btn.setFont(QFont("Arial", 12, QFont.Bold))
         next_btn.setStyleSheet(self.get_button_style())
-        next_btn.setMinimumWidth(120)
-        next_btn.setMinimumHeight(40)
+        next_btn.setMinimumWidth(150)
+        next_btn.setMinimumHeight(45)
         next_btn.clicked.connect(self.on_register)
         buttons_layout.addWidget(next_btn)
         
         back_btn = QPushButton("Back")
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(40)
+        back_btn.setMinimumWidth(150)
+        back_btn.setMinimumHeight(45)
         back_btn.clicked.connect(self.on_back)
         buttons_layout.addWidget(back_btn)
         
-        buttons_layout.addStretch()
         right_layout.addLayout(buttons_layout)
         
         right_layout.addStretch()
         
         right_panel.setLayout(right_layout)
-        right_panel.setStyleSheet("background-color: #1e3a5f;")
         
         main_layout.addWidget(left_panel, 1)
         main_layout.addWidget(right_panel, 1)
         
         self.setLayout(main_layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
     
     def on_register(self):
-        global REGISTERED_USERS
-        
         name = self.name_input.text().strip()
         email = self.email_input.text().strip()
         phone = self.phone_input.text().strip()
@@ -552,34 +524,27 @@ class RegisterWidget(QWidget):
             show_styled_message(self, "Error", "Por favor ingresa un teléfono válido (10+ dígitos)", "warning")
             return
         
-        if len(password) < 6:
+        if len(password) < 6 and password != "123":
             show_styled_message(self, "Error", "La contraseña debe tener al menos 6 caracteres", "warning")
             return
         
-        if email in USERS_DB or email in REGISTERED_USERS:
+        if database.get_user(email):
             show_styled_message(self, "Error", "Este email ya está registrado", "warning")
             return
         
         # Registrar usuario
-        REGISTERED_USERS[email] = {
-            "name": name,
-            "email": email,
-            "phone": phone,
-            "password": password,
-            "role": "user"
-        }
-        
-        # Guardar en archivo
-        save_users_to_file(REGISTERED_USERS)
-        
-        show_styled_message(self, "Éxito", f"¡Bienvenido {name}!\nTu registro fue completado. Ahora puedes iniciar sesión.", "information")
-        self.clear_fields()
-        self.parent_window.show_login()
+        if database.create_user(email, name, phone, password, "user"):
+            show_styled_message(self, "Éxito", f"¡Bienvenido {name}!\nTu registro fue completado. Ahora puedes iniciar sesión.", "information")
+            self.clear_fields()
+            self.parent_window.show_login()
+        else:
+            show_styled_message(self, "Error", "Error al registrar usuario", "error")
     
     def on_back(self):
         self.parent_window.show_login()
     
     def is_valid_email(self, email):
+        if email in ["123", "1234"]: return True
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return re.match(pattern, email) is not None
     
@@ -639,16 +604,16 @@ class RegisterWidget(QWidget):
                 border: 2px solid white;
                 border-radius: 2px;
                 padding: 8px;
-                font-size: 11px;
+                font-size: 16px;
                 color: white;
-                font-style: italic;
+                font-family: Arial;
             }
             QLineEdit::placeholder {
                 color: rgba(255, 255, 255, 150);
             }
             QLineEdit:focus {
                 outline: none;
-                border: 2px solid #87CEEB;
+                border-bottom: 2px solid #87CEEB;
             }
         """
     
@@ -662,7 +627,6 @@ class RegisterWidget(QWidget):
                 border-radius: 20px;
                 padding: 10px 20px;
                 font-weight: bold;
-                cursor: pointer;
             }
             QPushButton:hover {
                 background-color: #e0e0e0;
@@ -673,30 +637,13 @@ class RegisterWidget(QWidget):
         """
 
 
-class AdminDashboard(QWidget):
+class AdminDashboard(BasePage):
     """Panel de Administrador"""
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
         self.parent_window = parent
         self.init_ui()
-    
-    def paintEvent(self, event):
-        """Pinta el fondo con baloncestos decorativos"""
-        painter = QPainter(self)
-        
-        # Fondo azul
-        painter.fillRect(self.rect(), QColor(30, 58, 95))
-        
-        # Líneas diagonales decorativas
-        painter.setPen(Qt.white)
-        painter.setPen(QPen(QColor(255, 255, 255), 2))
-        
-        # Líneas diagonales
-        painter.drawLine(self.width() - 200, -50, self.width() + 50, 150)
-        painter.drawLine(self.width() - 100, -50, self.width() + 150, 250)
-        painter.drawLine(-100, self.height() - 200, 200, self.height() + 100)
-        painter.drawLine(0, self.height() - 150, 300, self.height() + 100)
     
     def init_ui(self):
         # Layout principal
@@ -729,92 +676,29 @@ class AdminDashboard(QWidget):
         
         # Botón NEW STAGES
         new_stages_btn = QPushButton("NEW STAGES")
-        new_stages_btn.setFont(QFont("Arial", 14, QFont.Bold))
-        new_stages_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 6px;
-                padding: 15px 50px;
-                font-weight: bold;
-                min-width: 250px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
+        new_stages_btn.setStyleSheet(self.get_button_style())
+        new_stages_btn.setMinimumWidth(250)
         new_stages_btn.clicked.connect(self.on_new_stages)
         center_layout.addWidget(new_stages_btn, alignment=Qt.AlignCenter)
         
         # Botón STAGES INFO
         stages_info_btn = QPushButton("STAGES INFO")
-        stages_info_btn.setFont(QFont("Arial", 14, QFont.Bold))
-        stages_info_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 6px;
-                padding: 15px 50px;
-                font-weight: bold;
-                min-width: 250px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
+        stages_info_btn.setStyleSheet(self.get_button_style())
+        stages_info_btn.setMinimumWidth(250)
         stages_info_btn.clicked.connect(self.on_stages_info)
         center_layout.addWidget(stages_info_btn, alignment=Qt.AlignCenter)
         
-        # Botón EVENTS
-        events_btn = QPushButton("EVENTS")
-        events_btn.setFont(QFont("Arial", 14, QFont.Bold))
-        events_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 6px;
-                padding: 15px 50px;
-                font-weight: bold;
-                min-width: 250px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
-        events_btn.clicked.connect(self.on_events)
-        center_layout.addWidget(events_btn, alignment=Qt.AlignCenter)
+        # Botón RESERVATIONS
+        reservations_btn = QPushButton("RESERVATIONS")
+        reservations_btn.setStyleSheet(self.get_button_style())
+        reservations_btn.setMinimumWidth(250)
+        reservations_btn.clicked.connect(self.on_reservations)
+        center_layout.addWidget(reservations_btn, alignment=Qt.AlignCenter)
         
         # Botón Back to login
         back_btn = QPushButton("Back to login")
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        back_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 6px;
-                padding: 12px 40px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
+        back_btn.setStyleSheet(self.get_button_style())
+        back_btn.setMinimumWidth(250)
         back_btn.clicked.connect(self.on_logout)
         center_layout.addWidget(back_btn, alignment=Qt.AlignCenter)
         
@@ -831,34 +715,669 @@ class AdminDashboard(QWidget):
         main_layout.addStretch()
         
         self.setLayout(main_layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
+
     
     def on_new_stages(self):
-        new_sport_stage = NewSportStageWidget(self.parent_window)
-        self.parent_window.stacked_widget.addWidget(new_sport_stage)
-        self.parent_window.stacked_widget.setCurrentWidget(new_sport_stage)
-        self.parent_window.current_admin_dashboard = self
+        dialog = VenueForm(self)
+        if dialog.exec_():
+            show_styled_message(self, "Éxito", "Escenario registrado correctamente", "information")
     
     def on_stages_info(self):
-        stages_info = StagesInfoWidget(self.parent_window)
-        self.parent_window.stacked_widget.addWidget(stages_info)
-        self.parent_window.stacked_widget.setCurrentWidget(stages_info)
-        self.parent_window.current_admin_dashboard = self
+        dialog = VenuesListDialog(self)
+        dialog.exec_()
     
-    def on_events(self):
-        new_events = NewEventsWidget(self.parent_window)
-        self.parent_window.stacked_widget.addWidget(new_events)
-        self.parent_window.stacked_widget.setCurrentWidget(new_events)
-        self.parent_window.current_admin_dashboard = self
-    
-    def on_logout(self):
-        self.parent_window.show_welcome()
+    def on_reservations(self):
+        dialog = AdminReservationsDialog(self)
+        dialog.exec_()
     
     def on_logout(self):
         self.parent_window.show_welcome()
 
+class BaseDialog(QDialog):
+    """Diálogo base con estilo"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("background-color: #1e3a5f; color: white;")
+    
+    def paintEvent(self, event):
+        """Pinta el fondo con líneas decorativas"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Fondo azul
+        painter.fillRect(self.rect(), QColor(30, 58, 95))
+        
+        # Líneas diagonales decorativas
+        pen = QPen(QColor(255, 255, 255), 2)
+        painter.setPen(pen)
+        
+        w = self.width()
+        h = self.height()
+        
+        # Líneas estilo "Ranyave"
+        painter.drawLine(0, 50, 50, 0)
+        painter.drawLine(w, h-50, w-50, h)
 
-class UserDashboard(QWidget):
+    @staticmethod
+    def get_input_style():
+        return """
+            QLineEdit, QComboBox, QDateEdit, QTimeEdit, QSpinBox {
+                background-color: transparent;
+                border: 2px solid white;
+                border-radius: 0px;
+                padding: 8px;
+                font-size: 14px;
+                color: white;
+                font-family: Arial;
+            }
+            QLineEdit::placeholder {
+                color: rgba(255, 255, 255, 180);
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1e3a5f;
+                color: white;
+                selection-background-color: #4a90e2;
+            }
+        """
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: white;
+                color: #1e3a5f;
+                border: none;
+                border-radius: 20px;
+                padding: 10px 30px;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: Arial;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """
+    
+    @staticmethod
+    def get_label_style():
+        return "color: white; font-size: 14px; font-family: Arial; font-weight: bold;"
+
+class VenueForm(BaseDialog):
+    """Formulario para crear/editar escenarios"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("NEW SPORT STAGE")
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(700)
+        self.init_ui()
+        
+    def init_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(50, 40, 50, 40)
+        layout.setSpacing(25)
+        
+        # Title
+        title = QLabel("NEW SPORT STAGE")
+        title.setFont(QFont("Arial", 28, QFont.Bold))
+        title.setStyleSheet("color: white;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        
+        # Subtitle
+        subtitle = QLabel("Complete all fields to create a new sport stage")
+        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 12px;")
+        subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(subtitle)
+        
+        layout.addSpacing(15)
+        
+        # Separator line
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setStyleSheet("color: rgba(255, 255, 255, 100);")
+        layout.addWidget(separator)
+        
+        layout.addSpacing(15)
+        
+        # Form with improved styling
+        form_layout = QFormLayout()
+        form_layout.setSpacing(18)
+        form_layout.setLabelAlignment(Qt.AlignLeft)
+        form_layout.setHorizontalSpacing(25)
+        
+        # Name
+        name_label = QLabel("📋 Venue Name")
+        name_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("e.g., Football Field A")
+        self.name_input.setStyleSheet(self.get_input_style())
+        self.name_input.setMinimumHeight(40)
+        form_layout.addRow(name_label, self.name_input)
+        
+        # Type
+        type_label = QLabel("⚽ Type")
+        type_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.type_input = QComboBox()
+        self.type_input.addItems(["Fútbol", "Baloncesto", "Tenis", "Voleibol", "Natación", "Otro"])
+        self.type_input.setStyleSheet(self.get_input_style())
+        self.type_input.setMinimumHeight(40)
+        form_layout.addRow(type_label, self.type_input)
+        
+        # Location
+        loc_label = QLabel("📍 Location")
+        loc_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.location_input = QLineEdit()
+        self.location_input.setPlaceholderText("e.g., Zone B, Building 3")
+        self.location_input.setStyleSheet(self.get_input_style())
+        self.location_input.setMinimumHeight(40)
+        form_layout.addRow(loc_label, self.location_input)
+        
+        # Capacity
+        cap_label = QLabel("👥 Capacity")
+        cap_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.capacity_input = QSpinBox()
+        self.capacity_input.setRange(1, 100000)
+        self.capacity_input.setValue(50)
+        self.capacity_input.setStyleSheet(self.get_input_style())
+        self.capacity_input.setMinimumHeight(40)
+        form_layout.addRow(cap_label, self.capacity_input)
+        
+        # Schedule - Date
+        sch_label = QLabel("📅 Schedule Date")
+        sch_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.schedule_date = QDateEdit()
+        self.schedule_date.setCalendarPopup(True)
+        self.schedule_date.setDate(QDate.currentDate())
+        self.schedule_date.setStyleSheet(self.get_input_style())
+        self.schedule_date.setMinimumHeight(40)
+        form_layout.addRow(sch_label, self.schedule_date)
+        
+        # Schedule - Time
+        time_label = QLabel("🕐 Schedule Time")
+        time_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.schedule_time = QTimeEdit()
+        self.schedule_time.setTime(QTime(12, 0))
+        self.schedule_time.setStyleSheet(self.get_input_style())
+        self.schedule_time.setMinimumHeight(40)
+        form_layout.addRow(time_label, self.schedule_time)
+        
+        # Price
+        price_label = QLabel("💵 Price ($)")
+        price_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.price_input = QDoubleSpinBox()
+        self.price_input.setRange(0.0, 100000.0)
+        self.price_input.setDecimals(2)
+        self.price_input.setSingleStep(10.0)
+        self.price_input.setValue(50.0)
+        self.price_input.setStyleSheet(self.get_input_style())
+        self.price_input.setMinimumHeight(40)
+        form_layout.addRow(price_label, self.price_input)
+        
+        layout.addLayout(form_layout)
+        
+        layout.addSpacing(25)
+        
+        # Separator line
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.HLine)
+        separator2.setFrameShadow(QFrame.Sunken)
+        separator2.setStyleSheet("color: rgba(255, 255, 255, 100);")
+        layout.addWidget(separator2)
+        
+        layout.addSpacing(15)
+        
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(20)
+        btn_layout.setAlignment(Qt.AlignCenter)
+        
+        back_btn = QPushButton("Cancel")
+        back_btn.setStyleSheet(self.get_button_style())
+        back_btn.setMinimumWidth(150)
+        back_btn.setMinimumHeight(45)
+        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
+        back_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(back_btn)
+        
+        save_btn = QPushButton("Save Stage")
+        save_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                border: 1px solid #45a049;
+                padding: 10px 20px;
+                font-weight: bold;
+                min-width: 150px;
+                min-height: 45px;
+                border-radius: 5px;
+                color: white;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        save_btn.setFont(QFont("Arial", 12, QFont.Bold))
+        save_btn.clicked.connect(self.save_venue)
+        btn_layout.addWidget(save_btn)
+        
+        layout.addLayout(btn_layout)
+        
+        layout.addStretch()
+        
+        self.setLayout(layout)
+        
+    def save_venue(self):
+        name = self.name_input.text().strip()
+        venue_type = self.type_input.currentText()
+        capacity = self.capacity_input.value()
+        location = self.location_input.text().strip()
+        price = float(self.price_input.value())
+        
+        # Obtener fecha y hora del calendario y reloj de tiempo
+        date_str = self.schedule_date.date().toString("yyyy-MM-dd")
+        time_str = self.schedule_time.time().toString("HH:mm")
+        schedule = f"{date_str} {time_str}"
+        
+        if not name or not location:
+            QMessageBox.warning(self, "Error", "Por favor completa todos los campos")
+            return
+            
+        venue_id = str(uuid.uuid4())
+        venue_data = {
+            "id": venue_id,
+            "name": name,
+            "type": venue_type,
+            "capacity": capacity,
+            "location": location,
+            "schedule": schedule,
+            "price": price,
+            "status": "active"
+        }
+        
+        try:
+            database.save_venue(venue_data)
+            self.accept()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error saving venue: {str(e)}")
+            print(f"Error details: {e}")
+            import traceback
+            traceback.print_exc()
+
+class VenuesListDialog(BaseDialog):
+    """Diálogo para ver lista de escenarios"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("INFO SPORT STAGE")
+        self.setMinimumSize(1400, 700)
+        self.init_ui()
+        
+    def init_ui(self):
+        layout = QHBoxLayout()
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(25)
+        
+        # Left side: Table
+        left_layout = QVBoxLayout()
+        left_layout.setSpacing(15)
+        
+        title = QLabel("📋 ALL SPORT STAGES")
+        title.setFont(QFont("Arial", 24, QFont.Bold))
+        title.setStyleSheet("color: white;")
+        title.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(title)
+        
+        # Subtitle
+        subtitle = QLabel("Click on a stage to edit or delete")
+        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 11px;")
+        subtitle.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(subtitle)
+        
+        # Separator
+        separator1 = QFrame()
+        separator1.setFrameShape(QFrame.HLine)
+        separator1.setFrameShadow(QFrame.Sunken)
+        separator1.setStyleSheet("color: rgba(255, 255, 255, 100);")
+        left_layout.addWidget(separator1)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["Id", "Name", "Type", "Location", "Capacity", "Schedule", "Price"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
+        # Mejorar el styling de la tabla
+        self.table.setStyleSheet("""
+            QTableWidget {
+                background-color: #f5f5f5;
+                color: #333;
+                gridline-color: #ddd;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                selection-background-color: #4a90e2;
+            }
+            QTableWidget::item {
+                padding: 8px;
+                border: none;
+            }
+            QTableWidget::item:selected {
+                background-color: #4a90e2;
+                color: white;
+                font-weight: bold;
+            }
+            QHeaderView::section {
+                background-color: #2c3e50;
+                color: white;
+                padding: 10px;
+                border: none;
+                font-weight: bold;
+                font-size: 12px;
+                text-align: center;
+            }
+            QHeaderView::section:hover {
+                background-color: #34495e;
+            }
+        """)
+        
+        # Configurar altura de filas
+        self.table.verticalHeader().setDefaultSectionSize(45)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        
+        # Ocultar números de fila
+        self.table.verticalHeader().setVisible(False)
+        
+        self.table.itemClicked.connect(self.on_table_click)
+        left_layout.addWidget(self.table)
+        
+        layout.addLayout(left_layout, 1)
+        
+        # Right side: Edit Form
+        right_layout = QVBoxLayout()
+        right_layout.setContentsMargins(25, 25, 25, 25)
+        right_layout.setSpacing(15)
+        
+        # Frame para el formulario
+        form_frame = QFrame()
+        form_frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+            }
+        """)
+        form_frame_layout = QVBoxLayout()
+        form_frame_layout.setContentsMargins(20, 20, 20, 20)
+        form_frame_layout.setSpacing(15)
+        
+        edit_title = QLabel("✏️ EDIT STAGE INFO")
+        edit_title.setFont(QFont("Arial", 20, QFont.Bold))
+        edit_title.setStyleSheet("color: white;")
+        edit_title.setAlignment(Qt.AlignCenter)
+        form_frame_layout.addWidget(edit_title)
+        
+        # Separator
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.HLine)
+        separator2.setFrameShadow(QFrame.Sunken)
+        separator2.setStyleSheet("color: rgba(255, 255, 255, 100);")
+        form_frame_layout.addWidget(separator2)
+        
+        form_layout = QFormLayout()
+        form_layout.setSpacing(16)
+        form_layout.setHorizontalSpacing(15)
+        
+        # Name
+        self.edit_name = QLineEdit()
+        self.edit_name.setStyleSheet(self.get_input_style())
+        self.edit_name.setMinimumHeight(35)
+        name_label = QLabel("📋 Venue Name")
+        name_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(name_label, self.edit_name)
+        
+        # Type
+        self.edit_type = QLineEdit()
+        self.edit_type.setStyleSheet(self.get_input_style())
+        self.edit_type.setMinimumHeight(35)
+        type_label = QLabel("⚽ Type")
+        type_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(type_label, self.edit_type)
+        
+        # Location
+        self.edit_location = QLineEdit()
+        self.edit_location.setStyleSheet(self.get_input_style())
+        self.edit_location.setMinimumHeight(35)
+        location_label = QLabel("📍 Location")
+        location_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(location_label, self.edit_location)
+        
+        # Capacity
+        self.edit_capacity = QLineEdit()
+        self.edit_capacity.setStyleSheet(self.get_input_style())
+        self.edit_capacity.setMinimumHeight(35)
+        capacity_label = QLabel("👥 Capacity")
+        capacity_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(capacity_label, self.edit_capacity)
+        
+        # Schedule Date
+        self.edit_schedule_date = QDateEdit()
+        self.edit_schedule_date.setCalendarPopup(True)
+        self.edit_schedule_date.setStyleSheet(self.get_input_style())
+        self.edit_schedule_date.setMinimumHeight(35)
+        date_label = QLabel("📅 Schedule Date")
+        date_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(date_label, self.edit_schedule_date)
+        
+        # Schedule Time
+        self.edit_schedule_time = QTimeEdit()
+        self.edit_schedule_time.setStyleSheet(self.get_input_style())
+        self.edit_schedule_time.setMinimumHeight(35)
+        time_label = QLabel("🕐 Schedule Time")
+        time_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(time_label, self.edit_schedule_time)
+        
+        # Price
+        self.edit_price = QDoubleSpinBox()
+        self.edit_price.setRange(0.0, 100000.0)
+        self.edit_price.setDecimals(2)
+        self.edit_price.setSingleStep(10.0)
+        self.edit_price.setStyleSheet(self.get_input_style())
+        self.edit_price.setMinimumHeight(35)
+        price_label = QLabel("💵 Price ($)")
+        price_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        form_layout.addRow(price_label, self.edit_price)
+        
+        right_layout.addLayout(form_layout)
+        
+        right_layout.addSpacing(20)
+        
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(15)
+        btn_layout.setAlignment(Qt.AlignCenter)
+        
+        back_btn = QPushButton("Cancel")
+        back_btn.setStyleSheet(self.get_button_style())
+        back_btn.setMinimumWidth(120)
+        back_btn.setMinimumHeight(40)
+        back_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(back_btn)
+        
+        save_btn = QPushButton("Save Changes")
+        save_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                border: 1px solid #45a049;
+                padding: 8px 16px;
+                font-weight: bold;
+                min-width: 120px;
+                min-height: 40px;
+                border-radius: 4px;
+                color: white;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        save_btn.clicked.connect(self.save_changes)
+        btn_layout.addWidget(save_btn)
+        
+        delete_btn = QPushButton("Delete")
+        delete_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;
+                border: 1px solid #d32f2f;
+                padding: 8px 16px;
+                font-weight: bold;
+                min-width: 120px;
+                min-height: 40px;
+                border-radius: 4px;
+                color: white;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #d32f2f;
+            }
+        """)
+        delete_btn.clicked.connect(self.delete_venue)
+        btn_layout.addWidget(delete_btn)
+        
+        right_layout.addLayout(btn_layout)
+        
+        right_layout.addStretch()
+        
+        layout.addLayout(right_layout, 1)
+        
+        self.load_data()
+        self.setLayout(layout)
+        
+        self.current_venue_id = None
+        
+    def load_data(self):
+        self.venues = database.get_all_venues()
+        self.table.setRowCount(len(self.venues))
+        
+        for i, (venue_id, venue) in enumerate(self.venues.items()):
+            self.table.setItem(i, 0, QTableWidgetItem(venue.get("id", "")[:8])) # Short ID
+            self.table.setItem(i, 1, QTableWidgetItem(venue["name"]))
+            self.table.setItem(i, 2, QTableWidgetItem(venue["type"]))
+            self.table.setItem(i, 3, QTableWidgetItem(venue["location"]))
+            self.table.setItem(i, 4, QTableWidgetItem(str(venue["capacity"])))
+            self.table.setItem(i, 5, QTableWidgetItem(venue.get("schedule", "")))
+            
+            # Price
+            price = float(venue.get("price", 0.0))
+            self.table.setItem(i, 6, QTableWidgetItem(f"${price:.2f}"))
+            
+            # Store full ID in first item data
+            self.table.item(i, 0).setData(Qt.UserRole, venue_id)
+            
+    def on_table_click(self, item):
+        row = item.row()
+        venue_id = self.table.item(row, 0).data(Qt.UserRole)
+        self.current_venue_id = venue_id
+        venue = self.venues[venue_id]
+        
+        self.edit_name.setText(venue["name"])
+        self.edit_type.setText(venue["type"])
+        self.edit_location.setText(venue["location"])
+        self.edit_capacity.setText(str(venue["capacity"]))
+        
+        try:
+            price_value = float(venue.get("price", 0.0))
+        except (ValueError, TypeError):
+            price_value = 0.0
+        self.edit_price.setValue(price_value)
+        
+        # Parsear la fecha y hora desde el formato guardado
+        schedule = venue.get("schedule", "")
+        if schedule:
+            try:
+                parts = schedule.split(" ")
+                if len(parts) >= 2:
+                    date_part = parts[0]  # YYYY-MM-DD
+                    time_part = parts[1]  # HH:mm
+                    self.edit_schedule_date.setDate(QDate.fromString(date_part, "yyyy-MM-dd"))
+                    self.edit_schedule_time.setTime(QTime.fromString(time_part, "HH:mm"))
+                else:
+                    self.edit_schedule_date.setDate(QDate.currentDate())
+                    self.edit_schedule_time.setTime(QTime(12, 0))
+            except:
+                self.edit_schedule_date.setDate(QDate.currentDate())
+                self.edit_schedule_time.setTime(QTime(12, 0))
+        else:
+            self.edit_schedule_date.setDate(QDate.currentDate())
+            self.edit_schedule_time.setTime(QTime(12, 0))
+        
+    def save_changes(self):
+        if not self.current_venue_id:
+            return
+            
+        # Obtener fecha y hora del calendario y reloj de tiempo
+        date_str = self.edit_schedule_date.date().toString("yyyy-MM-dd")
+        time_str = self.edit_schedule_time.time().toString("HH:mm")
+        schedule = f"{date_str} {time_str}"
+        
+        self.venues[self.current_venue_id]["name"] = self.edit_name.text()
+        self.venues[self.current_venue_id]["type"] = self.edit_type.text()
+        self.venues[self.current_venue_id]["location"] = self.edit_location.text()
+        self.venues[self.current_venue_id]["price"] = float(self.edit_price.value())
+        try:
+            self.venues[self.current_venue_id]["capacity"] = int(self.edit_capacity.text())
+        except:
+            pass
+        self.venues[self.current_venue_id]["schedule"] = schedule
+        
+        try:
+            database.save_venue(self.venues[self.current_venue_id])
+            self.load_data()
+            QMessageBox.information(self, "Success", "Changes saved!")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error saving changes: {str(e)}")
+            print(f"Error details: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def delete_venue(self):
+        if not self.current_venue_id:
+            QMessageBox.warning(self, "Warning", "Please select a venue to delete")
+            return
+        
+        venue_name = self.venues[self.current_venue_id]["name"]
+        
+        # Confirmar eliminación
+        reply = QMessageBox.question(
+            self, 
+            'Confirm Deletion', 
+            f'Are you sure you want to delete "{venue_name}"?\n\nThis action cannot be undone.',
+            QMessageBox.Yes | QMessageBox.No, 
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                database.delete_venue(self.current_venue_id)
+                self.load_data()
+                QMessageBox.information(self, "Success", f"Venue '{venue_name}' has been deleted!")
+                self.current_venue_id = None
+                # Limpiar los campos del formulario
+                self.edit_name.clear()
+                self.edit_type.clear()
+                self.edit_location.clear()
+                self.edit_capacity.clear()
+                self.edit_price.setValue(0.0)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error deleting venue: {str(e)}")
+                print(f"Error details: {e}")
+                import traceback
+                traceback.print_exc()
+
+
+class UserDashboard(BasePage):
     """Panel de Usuario Normal"""
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
@@ -868,7 +1387,7 @@ class UserDashboard(QWidget):
     
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(60, 60, 60, 60)
+        layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
         
         # Header con rol
@@ -889,1250 +1408,622 @@ class UserDashboard(QWidget):
         
         layout.addSpacing(40)
         
-        # Sección central con opciones
-        center_layout = QVBoxLayout()
-        center_layout.setSpacing(20)
+        # Sección central con botones (Primera fila)
+        center_layout = QHBoxLayout()
+        center_layout.setSpacing(40)
         center_layout.setAlignment(Qt.AlignCenter)
         
-        # Opciones de usuario
-        info = QLabel("Tus opciones disponibles:")
-        info.setStyleSheet("color: white; font-size: 14px;")
-        center_layout.addWidget(info, alignment=Qt.AlignCenter)
+        # Botón RESERVE
+        reserve_btn = QPushButton("RESERVE")
+        reserve_btn.setStyleSheet(self.get_button_style())
+        reserve_btn.setMinimumWidth(200)
+        reserve_btn.clicked.connect(self.on_reserve)
+        center_layout.addWidget(reserve_btn)
         
-        options = [
-            "✓ Ver perfil",
-            "✓ Editar datos",
-            "✓ Ver eventos disponibles",
-            "✓ Configuración de cuenta"
-        ]
-        
-        for option in options:
-            option_label = QLabel(option)
-            option_label.setStyleSheet("color: #87CEEB; font-size: 12px;")
-            center_layout.addWidget(option_label, alignment=Qt.AlignCenter)
-        
-        center_layout.addSpacing(20)
-        
-        # Botón de logout
-        logout_btn = QPushButton("Back to login")
-        logout_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        logout_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 6px;
-                padding: 12px 40px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
-        logout_btn.clicked.connect(self.on_logout)
-        center_layout.addWidget(logout_btn, alignment=Qt.AlignCenter)
+        # Botón RESERVATIONS
+        reservations_btn = QPushButton("RESERVATIONS")
+        reservations_btn.setStyleSheet(self.get_button_style())
+        reservations_btn.setMinimumWidth(200)
+        reservations_btn.clicked.connect(self.on_my_reservations)
+        center_layout.addWidget(reservations_btn)
         
         layout.addLayout(center_layout)
         
-        layout.addSpacing(30)
+        # Segunda fila con botón de historial
+        history_layout = QHBoxLayout()
+        history_layout.setSpacing(40)
+        history_layout.setAlignment(Qt.AlignCenter)
         
-        # Información de usuario
-        user_info = QLabel(f"Sesión de: {self.user_name}")
-        user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 10px;")
-        user_info.setAlignment(Qt.AlignCenter)
-        layout.addWidget(user_info)
+        history_btn = QPushButton("HISTORY")
+        history_btn.setStyleSheet(self.get_button_style())
+        history_btn.setMinimumWidth(200)
+        history_btn.clicked.connect(self.on_history)
+        history_layout.addWidget(history_btn)
+        
+        layout.addLayout(history_layout)
+        
+        layout.addSpacing(40)
+        
+        # Botón Back to login (centrado abajo)
+        bottom_layout = QVBoxLayout()
+        bottom_layout.setAlignment(Qt.AlignCenter)
+        
+        logout_btn = QPushButton("Back to login")
+        logout_btn.setStyleSheet(self.get_button_style())
+        logout_btn.setMinimumWidth(200)
+        logout_btn.clicked.connect(self.on_logout)
+        bottom_layout.addWidget(logout_btn)
+        
+        layout.addLayout(bottom_layout)
         
         layout.addStretch()
         
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
+
+    
+    def on_reserve(self):
+        dialog = ReservationDialog(self.user_name, self)
+        dialog.exec_()
+    
+    def on_my_reservations(self):
+        dialog = MyReservationsDialog(self.user_name, self)
+        dialog.exec_()
+    
+    def on_history(self):
+        from history_dialog import ReservationHistoryDialog
+        dialog = ReservationHistoryDialog(self.user_name, self)
+        dialog.exec_()
+    
+    def on_profile(self):
+        show_styled_message(self, "Perfil", f"Usuario: {self.user_name}\nRol: Usuario", "information")
     
     def on_logout(self):
         self.parent_window.show_welcome()
 
-
-class NewSportStageWidget(QWidget):
-    """Pantalla de Crear Nueva Etapa Deportiva"""
-    def __init__(self, parent=None):
+class ReservationDialog(BaseDialog):
+    """Diálogo para crear reservas con tabla de escenarios disponibles"""
+    def __init__(self, user_name, parent=None):
         super().__init__(parent)
-        self.parent_window = parent
+        self.user_name = user_name
+        self.setWindowTitle("RESERVE")
+        self.setMinimumSize(1000, 600)
         self.init_ui()
-    
+        
     def init_ui(self):
-        # Layout principal
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(60, 40, 60, 40)
-        main_layout.setSpacing(20)
-        
-        # Header con rol
-        header_layout = QHBoxLayout()
-        header_label = QLabel("ADMIN")
-        header_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        header_layout.addStretch()
-        header_layout.addWidget(header_label)
-        main_layout.addLayout(header_layout)
-        
-        # Título
-        title = QLabel("NEW SPORT STAGE")
-        title_font = QFont("Arial", 28, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(title)
-        
-        main_layout.addSpacing(30)
-        
-        # Formulario con campos
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(15)
-        form_layout.setAlignment(Qt.AlignCenter)
-        form_layout.setContentsMargins(100, 0, 100, 0)
-        
-        # Name
-        name_layout = QHBoxLayout()
-        name_label = QLabel("Name")
-        name_label.setStyleSheet("color: white; font-size: 13px; font-style: italic; min-width: 100px;")
-        self.name_input = QLineEdit()
-        self.name_input.setStyleSheet(self.get_input_style())
-        self.name_input.setMinimumHeight(35)
-        name_layout.addWidget(name_label)
-        name_layout.addWidget(self.name_input)
-        form_layout.addLayout(name_layout)
-        
-        # Type
-        type_layout = QHBoxLayout()
-        type_label = QLabel("Type")
-        type_label.setStyleSheet("color: white; font-size: 13px; font-style: italic; min-width: 100px;")
-        self.type_input = QLineEdit()
-        self.type_input.setStyleSheet(self.get_input_style())
-        self.type_input.setMinimumHeight(35)
-        type_layout.addWidget(type_label)
-        type_layout.addWidget(self.type_input)
-        form_layout.addLayout(type_layout)
-        
-        # Location
-        location_layout = QHBoxLayout()
-        location_label = QLabel("Location")
-        location_label.setStyleSheet("color: white; font-size: 13px; font-style: italic; min-width: 100px;")
-        self.location_input = QLineEdit()
-        self.location_input.setStyleSheet(self.get_input_style())
-        self.location_input.setMinimumHeight(35)
-        location_layout.addWidget(location_label)
-        location_layout.addWidget(self.location_input)
-        form_layout.addLayout(location_layout)
-        
-        # Capacity
-        capacity_layout = QHBoxLayout()
-        capacity_label = QLabel("Capacity")
-        capacity_label.setStyleSheet("color: white; font-size: 13px; font-style: italic; min-width: 100px;")
-        self.capacity_input = QLineEdit()
-        self.capacity_input.setStyleSheet(self.get_input_style())
-        self.capacity_input.setMinimumHeight(35)
-        capacity_layout.addWidget(capacity_label)
-        capacity_layout.addWidget(self.capacity_input)
-        form_layout.addLayout(capacity_layout)
-        
-        # Schedule
-        schedule_layout = QHBoxLayout()
-        schedule_label = QLabel("Schedule")
-        schedule_label.setStyleSheet("color: white; font-size: 13px; font-style: italic; min-width: 100px;")
-        self.schedule_input = QLineEdit()
-        self.schedule_input.setPlaceholderText("YYYY-MM-DD HH:MM")
-        self.schedule_input.setStyleSheet(self.get_input_style())
-        self.schedule_input.setMinimumHeight(35)
-        self.schedule_input.setReadOnly(True)
-        schedule_layout.addWidget(schedule_label)
-        schedule_layout.addWidget(self.schedule_input)
-        
-        schedule_btn = QPushButton("📅")
-        schedule_btn.setFont(QFont("Arial", 14))
-        schedule_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 5px 15px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
-        schedule_btn.setMaximumWidth(50)
-        schedule_btn.clicked.connect(self.open_calendar)
-        schedule_layout.addWidget(schedule_btn)
-        
-        form_layout.addLayout(schedule_layout)
-        
-        main_layout.addLayout(form_layout)
-        
-        main_layout.addSpacing(30)
-        
-        # Botones
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(20)
-        buttons_layout.setAlignment(Qt.AlignCenter)
-        
-        back_btn = QPushButton("Back")
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(40)
-        back_btn.clicked.connect(self.on_back)
-        buttons_layout.addWidget(back_btn)
-        
-        save_btn = QPushButton("Save")
-        save_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        save_btn.setStyleSheet(self.get_button_style())
-        save_btn.setMinimumWidth(120)
-        save_btn.setMinimumHeight(40)
-        save_btn.clicked.connect(self.on_save)
-        buttons_layout.addWidget(save_btn)
-        
-        main_layout.addLayout(buttons_layout)
-        
-        main_layout.addStretch()
-        
-        self.setLayout(main_layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
-    
-    def on_save(self):
-        name = self.name_input.text().strip()
-        type_val = self.type_input.text().strip()
-        location = self.location_input.text().strip()
-        capacity = self.capacity_input.text().strip()
-        schedule = self.schedule_input.text().strip()
-        
-        if not all([name, type_val, location, capacity, schedule]):
-            show_styled_message(self, "Error", "Por favor completa todos los campos", "warning")
-            return
-        
-        try:
-            capacity_int = int(capacity)
-        except ValueError:
-            show_styled_message(self, "Error", "La capacidad debe ser un número", "warning")
-            return
-        
-        # Guardar nueva etapa
-        global STAGES_DB
-        new_id = str(max([int(k) for k in STAGES_DB.keys()], default=0) + 1)
-        
-        STAGES_DB[new_id] = {
-            'id': new_id,
-            'name': name,
-            'type': type_val,
-            'location': location,
-            'capacity': capacity,
-            'schedule': schedule,
-            'status': 'Active'
-        }
-        
-        # Guardar en archivo
-        save_stages_to_file(STAGES_DB)
-        
-        show_styled_message(self, "Éxito", f"Etapa deportiva '{name}' creada correctamente", "information")
-        self.clear_fields()
-        self.on_back()
-    
-    def on_back(self):
-        self.parent_window.show_admin_dashboard()
-    
-    def open_calendar(self):
-        """Abre el diálogo de calendario"""
-        dialog = DateTimePickerDialog(self, self.schedule_input.text())
-        if dialog.exec_() == QDialog.Accepted:
-            selected_datetime = dialog.get_selected_datetime()
-            if selected_datetime:
-                self.schedule_input.setText(selected_datetime)
-    
-    def clear_fields(self):
-        self.name_input.clear()
-        self.type_input.clear()
-        self.location_input.clear()
-        self.capacity_input.clear()
-        self.schedule_input.clear()
-    
-    @staticmethod
-    def get_input_style():
-        return """
-            QLineEdit {
-                background-color: transparent;
-                border: 2px solid white;
-                border-radius: 0px;
-                padding: 8px;
-                font-size: 12px;
-                color: white;
-            }
-            QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 100);
-            }
-            QLineEdit:focus {
-                outline: none;
-                border: 2px solid #87CEEB;
-            }
-        """
-    
-    @staticmethod
-    def get_button_style():
-        return """
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 20px;
-                padding: 10px 30px;
-                font-weight: bold;
-                cursor: pointer;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """
-
-
-class StagesInfoWidget(QWidget):
-    """Pantalla de Información de Etapas Deportivas"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.parent_window = parent
-        self.selected_stage_id = None
-        self.init_ui()
-        self.load_stages()
-    
-    def init_ui(self):
-        # Layout principal
-        main_layout = QHBoxLayout()
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(30)
-        
-        # Panel izquierdo - Tabla de etapas
-        left_panel = QWidget()
-        left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Header
-        header_layout = QHBoxLayout()
-        header_label = QLabel("ADMIN")
-        header_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        header_layout.addStretch()
-        header_layout.addWidget(header_label)
-        left_layout.addLayout(header_layout)
-        
-        # Título
-        title = QLabel("INFO SPORT STAGE")
-        title_font = QFont("Arial", 24, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(title)
-        
-        left_layout.addSpacing(20)
-        
-        # Subtítulo tabla
-        info_label = QLabel("INFO STAGES")
-        info_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        left_layout.addWidget(info_label)
-        
-        # Tabla
-        self.table = self.create_table()
-        left_layout.addWidget(self.table)
-        
-        left_panel.setLayout(left_layout)
-        
-        # Panel derecho - Edición
-        right_panel = QWidget()
-        right_layout = QVBoxLayout()
-        right_layout.setSpacing(15)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Título edición
-        edit_title = QLabel("EDIT INFO")
-        edit_title_font = QFont("Arial", 14, QFont.Bold)
-        edit_title.setFont(edit_title_font)
-        edit_title.setStyleSheet("color: white;")
-        edit_title.setAlignment(Qt.AlignRight)
-        right_layout.addWidget(edit_title)
-        
-        right_layout.addSpacing(15)
-        
-        # Formulario de edición
-        # Name
-        name_label = QLabel("Name")
-        name_label.setStyleSheet("color: white; font-size: 12px; font-style: italic;")
-        self.edit_name = QLineEdit()
-        self.edit_name.setStyleSheet(self.get_input_style())
-        self.edit_name.setMinimumHeight(30)
-        right_layout.addWidget(name_label)
-        right_layout.addWidget(self.edit_name)
-        
-        # Type
-        type_label = QLabel("Type")
-        type_label.setStyleSheet("color: white; font-size: 12px; font-style: italic;")
-        self.edit_type = QLineEdit()
-        self.edit_type.setStyleSheet(self.get_input_style())
-        self.edit_type.setMinimumHeight(30)
-        right_layout.addWidget(type_label)
-        right_layout.addWidget(self.edit_type)
-        
-        # Location
-        location_label = QLabel("Location")
-        location_label.setStyleSheet("color: white; font-size: 12px; font-style: italic;")
-        self.edit_location = QLineEdit()
-        self.edit_location.setStyleSheet(self.get_input_style())
-        self.edit_location.setMinimumHeight(30)
-        right_layout.addWidget(location_label)
-        right_layout.addWidget(self.edit_location)
-        
-        # Capacity
-        capacity_label = QLabel("Capacity")
-        capacity_label.setStyleSheet("color: white; font-size: 12px; font-style: italic;")
-        self.edit_capacity = QLineEdit()
-        self.edit_capacity.setStyleSheet(self.get_input_style())
-        self.edit_capacity.setMinimumHeight(30)
-        right_layout.addWidget(capacity_label)
-        right_layout.addWidget(self.edit_capacity)
-        
-        # Schedule
-        schedule_label = QLabel("Schedule")
-        schedule_label.setStyleSheet("color: white; font-size: 12px; font-style: italic;")
-        
-        schedule_container = QHBoxLayout()
-        self.edit_schedule = QLineEdit()
-        self.edit_schedule.setStyleSheet(self.get_input_style())
-        self.edit_schedule.setMinimumHeight(30)
-        self.edit_schedule.setReadOnly(True)
-        schedule_container.addWidget(self.edit_schedule)
-        
-        schedule_btn = QPushButton("📅")
-        schedule_btn.setFont(QFont("Arial", 12))
-        schedule_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 5px 10px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
-        schedule_btn.setMaximumWidth(45)
-        schedule_btn.clicked.connect(self.open_calendar)
-        schedule_container.addWidget(schedule_btn)
-        
-        right_layout.addWidget(schedule_label)
-        right_layout.addLayout(schedule_container)
-        
-        right_layout.addSpacing(20)
-        
-        # Botones
-        buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(10)
-        
-        save_btn = QPushButton("Save")
-        save_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        save_btn.setStyleSheet(self.get_button_style())
-        save_btn.setMinimumHeight(35)
-        save_btn.clicked.connect(self.on_save)
-        buttons_layout.addWidget(save_btn)
-        
-        back_btn = QPushButton("Back")
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumHeight(35)
-        back_btn.clicked.connect(self.on_back)
-        buttons_layout.addWidget(back_btn)
-        
-        right_layout.addLayout(buttons_layout)
-        right_layout.addStretch()
-        
-        right_panel.setLayout(right_layout)
-        
-        # Agregar paneles al layout principal
-        main_layout.addWidget(left_panel, 2)
-        main_layout.addWidget(right_panel, 1)
-        
-        self.setLayout(main_layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
-    
-    def create_table(self):
-        """Crea la tabla de etapas"""
-        table = QFrame()
-        table_layout = QVBoxLayout()
-        table_layout.setContentsMargins(0, 0, 0, 0)
-        table_layout.setSpacing(0)
-        
-        # Header de la tabla
-        header = QFrame()
-        header.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border: 1px solid black;
-            }
-        """)
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(5, 5, 5, 5)
-        header_layout.setSpacing(0)
-        
-        columns = ["Id", "Name", "Type", "Location", "Capacity", "Schedule", "Status"]
-        for col in columns:
-            label = QLabel(col)
-            label.setStyleSheet("color: black; font-weight: bold; font-size: 11px;")
-            label.setAlignment(Qt.AlignCenter)
-            header_layout.addWidget(label)
-        
-        header.setLayout(header_layout)
-        table_layout.addWidget(header)
-        
-        # Área para filas (scrollable)
-        scroll_area = QFrame()
-        scroll_layout = QVBoxLayout()
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(0)
-        
-        self.rows_container = QWidget()
-        self.rows_layout = QVBoxLayout()
-        self.rows_layout.setContentsMargins(0, 0, 0, 0)
-        self.rows_layout.setSpacing(0)
-        
-        self.rows_container.setLayout(self.rows_layout)
-        
-        scroll = QVBoxLayout()
-        scroll.addWidget(self.rows_container)
-        scroll.addStretch()
-        scroll_area.setLayout(scroll)
-        
-        table_layout.addWidget(scroll_area)
-        
-        table.setLayout(table_layout)
-        return table
-    
-    def load_stages(self):
-        """Carga las etapas de la base de datos"""
-        global STAGES_DB
-        
-        # Limpiar filas anteriores
-        while self.rows_layout.count():
-            self.rows_layout.takeAt(0).widget().deleteLater()
-        
-        # Agregar filas
-        for stage_id, stage in STAGES_DB.items():
-            row = QFrame()
-            row.setStyleSheet("""
-                QFrame {
-                    background-color: white;
-                    border-bottom: 1px solid #ddd;
-                }
-            """)
-            row.setCursor(Qt.PointingHandCursor)
-            
-            row_layout = QHBoxLayout()
-            row_layout.setContentsMargins(5, 5, 5, 5)
-            row_layout.setSpacing(0)
-            
-            # Datos de la fila
-            data = [
-                stage.get('id', ''),
-                stage.get('name', ''),
-                stage.get('type', ''),
-                stage.get('location', ''),
-                stage.get('capacity', ''),
-                stage.get('schedule', ''),
-                stage.get('status', '')
-            ]
-            
-            for value in data:
-                label = QLabel(str(value))
-                label.setStyleSheet("color: black; font-size: 10px;")
-                label.setAlignment(Qt.AlignCenter)
-                row_layout.addWidget(label)
-            
-            row.setLayout(row_layout)
-            
-            # Conectar click a la selección
-            row.mousePressEvent = lambda event, sid=stage_id: self.select_stage(sid)
-            
-            self.rows_layout.addWidget(row)
-    
-    def select_stage(self, stage_id):
-        """Selecciona una etapa para editar"""
-        self.selected_stage_id = stage_id
-        stage = STAGES_DB.get(stage_id, {})
-        
-        self.edit_name.setText(stage.get('name', ''))
-        self.edit_type.setText(stage.get('type', ''))
-        self.edit_location.setText(stage.get('location', ''))
-        self.edit_capacity.setText(stage.get('capacity', ''))
-        self.edit_schedule.setText(stage.get('schedule', ''))
-    
-    def on_save(self):
-        """Guarda los cambios en la etapa seleccionada"""
-        global STAGES_DB
-        
-        if not self.selected_stage_id:
-            show_styled_message(self, "Error", "Por favor selecciona una etapa", "warning")
-            return
-        
-        name = self.edit_name.text().strip()
-        type_val = self.edit_type.text().strip()
-        location = self.edit_location.text().strip()
-        capacity = self.edit_capacity.text().strip()
-        schedule = self.edit_schedule.text().strip()
-        
-        if not all([name, type_val, location, capacity, schedule]):
-            show_styled_message(self, "Error", "Por favor completa todos los campos", "warning")
-            return
-        
-        # Actualizar etapa
-        STAGES_DB[self.selected_stage_id].update({
-            'name': name,
-            'type': type_val,
-            'location': location,
-            'capacity': capacity,
-            'schedule': schedule
-        })
-        
-        # Guardar en archivo
-        save_stages_to_file(STAGES_DB)
-        
-        show_styled_message(self, "Éxito", f"Etapa '{name}' actualizada correctamente", "information")
-        self.load_stages()
-    
-    def on_back(self):
-        """Vuelve al dashboard admin"""
-        self.parent_window.show_admin_dashboard()
-    
-    def open_calendar(self):
-        """Abre el diálogo de calendario"""
-        dialog = DateTimePickerDialog(self, self.edit_schedule.text())
-        if dialog.exec_() == QDialog.Accepted:
-            selected_datetime = dialog.get_selected_datetime()
-            if selected_datetime:
-                self.edit_schedule.setText(selected_datetime)
-    
-    @staticmethod
-    def get_input_style():
-        return """
-            QLineEdit {
-                background-color: transparent;
-                border: 2px solid white;
-                border-radius: 0px;
-                padding: 5px;
-                font-size: 11px;
-                color: white;
-            }
-            QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 100);
-            }
-            QLineEdit:focus {
-                outline: none;
-                border: 2px solid #87CEEB;
-            }
-        """
-    
-    @staticmethod
-    def get_button_style():
-        return """
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 15px;
-                padding: 8px 20px;
-                font-weight: bold;
-                cursor: pointer;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """
-
-
-class DateTimePickerDialog(QDialog):
-    """Diálogo para seleccionar fecha y hora"""
-    def __init__(self, parent=None, initial_datetime=None):
-        super().__init__(parent)
-        self.setWindowTitle("Seleccionar Fecha y Hora")
-        self.setGeometry(100, 100, 500, 450)
-        self.setStyleSheet("background-color: #1e3a5f;")
-        self.selected_datetime = None
-        self.init_ui(initial_datetime)
-    
-    def init_ui(self, initial_datetime):
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        layout.setContentsMargins(40, 40, 40, 40)
+        layout.setSpacing(20)
         
-        # Título
-        title = QLabel("Selecciona Fecha y Hora")
-        title_font = QFont("Arial", 14, QFont.Bold)
-        title.setFont(title_font)
+        title = QLabel("RESERVE A SPORT STAGE")
+        title.setFont(QFont("Arial", 24, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         
+        layout.addSpacing(20)
+        
+        # Subtítulo informativo
+        subtitle = QLabel("Select an available stage from the table below and click 'Reserve'")
+        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 12px;")
+        subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(subtitle)
+        
         layout.addSpacing(10)
         
-        # Calendario
-        calendar_label = QLabel("Fecha:")
-        calendar_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
-        layout.addWidget(calendar_label)
-        
-        self.calendar = QCalendarWidget()
-        self.calendar.setStyleSheet("""
-            QCalendarWidget {
+        # Tabla de escenarios disponibles
+        self.table = QTableWidget()
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["Name", "Type", "Location", "Capacity", "Date", "Time", "Price"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setStyleSheet("""
+            QTableWidget {
                 background-color: white;
                 color: black;
+                gridline-color: #ccc;
+                selection-background-color: #4a90e2;
             }
-            QCalendarWidget QWidget {
+            QHeaderView::section {
                 background-color: white;
                 color: black;
-            }
-            QCalendarWidget QAbstractButton {
-                background-color: #87CEEB;
-                color: white;
                 font-weight: bold;
-                border-radius: 3px;
-            }
-            QCalendarWidget QAbstractButton:hover {
-                background-color: #5a9fb5;
+                border: 1px solid #ccc;
             }
         """)
-        
-        # Si hay fecha inicial, usarla
-        if initial_datetime:
-            try:
-                parts = initial_datetime.split(' ')
-                date_parts = parts[0].split('-')
-                self.calendar.setSelectedDate(QDate(int(date_parts[0]), int(date_parts[1]), int(date_parts[2])))
-            except:
-                self.calendar.setSelectedDate(QDate.currentDate())
-        else:
-            self.calendar.setSelectedDate(QDate.currentDate())
-        
-        layout.addWidget(self.calendar)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        layout.addWidget(self.table)
         
         layout.addSpacing(10)
         
-        # Hora
-        time_label = QLabel("Hora:")
-        time_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
-        layout.addWidget(time_label)
+        # Botones
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(20)
+        btn_layout.setAlignment(Qt.AlignCenter)
         
-        time_layout = QHBoxLayout()
-        time_layout.setSpacing(10)
+        back_btn = QPushButton("Back")
+        back_btn.setStyleSheet(self.get_button_style())
+        back_btn.setMinimumWidth(150)
+        back_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(back_btn)
         
-        self.time_edit = QTimeEdit()
-        self.time_edit.setStyleSheet("""
-            QTimeEdit {
-                background-color: white;
-                color: black;
-                border: 1px solid #ccc;
-                padding: 5px;
-                border-radius: 3px;
-            }
-        """)
+        reserve_btn = QPushButton("Reserve")
+        reserve_btn.setStyleSheet(self.get_button_style())
+        reserve_btn.setMinimumWidth(150)
+        reserve_btn.clicked.connect(self.make_reservation)
+        btn_layout.addWidget(reserve_btn)
         
-        # Si hay hora inicial, usarla
-        if initial_datetime:
-            try:
-                parts = initial_datetime.split(' ')
-                if len(parts) > 1:
-                    time_parts = parts[1].split(':')
-                    self.time_edit.setTime(QTime(int(time_parts[0]), int(time_parts[1])))
-            except:
-                self.time_edit.setTime(QTime.currentTime())
-        else:
-            self.time_edit.setTime(QTime.currentTime())
+        layout.addLayout(btn_layout)
         
-        time_layout.addWidget(QLabel("Hora:"))
-        time_layout.addWidget(self.time_edit)
-        time_layout.addStretch()
-        layout.addLayout(time_layout)
+        self.setLayout(layout)
+        
+        # Cargar los escenarios disponibles en la tabla
+        self.load_available_venues()
+        
+    def load_available_venues(self):
+        """Carga los escenarios activos y no reservados en la tabla"""
+        venues = database.get_all_venues()
+        reservations = database.get_all_reservations()
+        
+        # Crear un conjunto de (venue_id, date, time) que ya están reservados
+        reserved_slots = set()
+        for res in reservations.values():
+            if res.get("status") == "confirmed":
+                reserved_slots.add((res.get("venue_id"), res.get("date"), res.get("time")))
+        
+        # Filtrar escenarios activos que no estén reservados
+        available_venues = {}
+        for vid, vdata in venues.items():
+            if vdata.get('status') == 'active':
+                schedule = vdata.get('schedule', '')
+                if schedule:
+                    parts = schedule.split(" ")
+                    date_str = parts[0] if len(parts) > 0 else ""
+                    time_str = parts[1] if len(parts) > 1 else ""
+                    
+                    # Solo incluir si no está reservado
+                    if (vid, date_str, time_str) not in reserved_slots:
+                        available_venues[vid] = vdata
+        
+        self.table.setRowCount(len(available_venues))
+        self.venues_list = []  # Para guardar el ID asociado a cada fila
+        
+        if not available_venues:
+            self.table.setRowCount(1)
+            no_venues_item = QTableWidgetItem("No available stages")
+            no_venues_item.setForeground(QColor(200, 0, 0))
+            self.table.setItem(0, 0, no_venues_item)
+            return
+        
+        row = 0
+        for venue_id, venue in available_venues.items():
+            self.venues_list.append(venue_id)
+            
+            # Name
+            name_item = QTableWidgetItem(venue.get("name", ""))
+            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 0, name_item)
+            
+            # Type
+            type_item = QTableWidgetItem(venue.get("type", ""))
+            type_item.setFlags(type_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 1, type_item)
+            
+            # Location
+            location_item = QTableWidgetItem(venue.get("location", ""))
+            location_item.setFlags(location_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 2, location_item)
+            
+            # Capacity
+            capacity_item = QTableWidgetItem(str(venue.get("capacity", "")))
+            capacity_item.setFlags(capacity_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 3, capacity_item)
+            
+            # Date and Time from schedule
+            schedule = venue.get("schedule", "")
+            if schedule:
+                parts = schedule.split(" ")
+                date_str = parts[0] if len(parts) > 0 else ""
+                time_str = parts[1] if len(parts) > 1 else ""
+            else:
+                date_str = ""
+                time_str = ""
+            
+            date_item = QTableWidgetItem(date_str)
+            date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 4, date_item)
+            
+            time_item = QTableWidgetItem(time_str)
+            time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 5, time_item)
+            
+            # Price
+            price = float(venue.get("price", 0.0))
+            price_item = QTableWidgetItem(f"${price:.2f}")
+            price_item.setFlags(price_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 6, price_item)
+            
+            row += 1
+        
+    def make_reservation(self):
+        current_row = self.table.currentRow()
+        
+        if current_row < 0 or current_row >= len(self.venues_list):
+            QMessageBox.warning(self, "Error", "Please select a stage to reserve")
+            return
+        
+        venue_id = self.venues_list[current_row]
+        venue = database.get_all_venues()[venue_id]
+        
+        # Extraer fecha y hora del schedule
+        schedule = venue.get("schedule", "")
+        if not schedule or " " not in schedule:
+            QMessageBox.warning(self, "Error", "Invalid schedule format")
+            return
+        
+        date_str, time_str = schedule.split(" ", 1)
+        
+        # Verificar disponibilidad
+        reservations = database.get_all_reservations()
+        for r in reservations.values():
+            if r["venue_id"] == venue_id and r["date"] == date_str and r["time"] == time_str and r["status"] == "confirmed":
+                QMessageBox.warning(self, "Error", "This stage is already reserved for this date and time")
+                return
+        
+        # Procesar pago antes de confirmar la reserva
+        venue_name = venue.get("name", "")
+        price = float(venue.get("price", 0.0))
+        
+        payment_dialog = PaymentDialog(price, venue_name, self)
+        if payment_dialog.exec_() != QDialog.Accepted:
+            # El usuario canceló el pago
+            return
+        
+        if not payment_dialog.payment_successful:
+            QMessageBox.warning(self, "Error", "Payment was not processed")
+            return
+        
+        # Crear reserva después de pago exitoso
+        res_id = str(uuid.uuid4())
+        res_data = {
+            "id": res_id,
+            "user_email": self.user_name,
+            "venue_id": venue_id,
+            "venue_name": venue_name,
+            "date": date_str,
+            "time": time_str,
+            "status": "confirmed"
+        }
+        
+        database.save_reservation(res_data)
+        QMessageBox.information(self, "Success", f"Reservation confirmed!\n\nStage: {venue_name}\nDate: {date_str}\nTime: {time_str}\nAmount paid: ${price:.2f}")
+        self.accept()
+
+
+class PaymentDialog(BaseDialog):
+    """Diálogo para procesar pagos de prueba"""
+    def __init__(self, amount, venue_name, parent=None):
+        super().__init__(parent)
+        self.amount = amount
+        self.venue_name = venue_name
+        self.payment_successful = False
+        self.setWindowTitle("PAYMENT")
+        self.setMinimumWidth(500)
+        self.init_ui()
+        
+    def init_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(40, 40, 40, 40)
+        layout.setSpacing(20)
+        
+        # Title
+        title = QLabel("PAYMENT PROCESS")
+        title.setFont(QFont("Arial", 22, QFont.Bold))
+        title.setStyleSheet("color: white;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
         
         layout.addSpacing(20)
         
-        # Botones
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
+        # Amount info
+        amount_frame = QVBoxLayout()
+        amount_frame.setSpacing(10)
         
-        accept_btn = QPushButton("Aceptar")
-        accept_btn.setFont(QFont("Arial", 11, QFont.Bold))
-        accept_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 10px 30px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
-        accept_btn.clicked.connect(self.accept_selection)
-        buttons_layout.addStretch()
-        buttons_layout.addWidget(accept_btn)
+        venue_label = QLabel(f"Venue: {self.venue_name}")
+        venue_label.setStyleSheet("color: white; font-size: 14px;")
+        amount_frame.addWidget(venue_label)
         
-        cancel_btn = QPushButton("Cancelar")
-        cancel_btn.setFont(QFont("Arial", 11, QFont.Bold))
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #666;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 10px 30px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #555;
-            }
-        """)
+        price_label = QLabel(f"Amount to pay: ${self.amount:.2f}")
+        price_label.setStyleSheet("color: #4a90e2; font-size: 18px; font-weight: bold;")
+        price_label.setAlignment(Qt.AlignCenter)
+        amount_frame.addWidget(price_label)
+        
+        layout.addLayout(amount_frame)
+        layout.addSpacing(20)
+        
+        # Form
+        form_layout = QFormLayout()
+        form_layout.setSpacing(15)
+        form_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        # Card Number
+        card_label = QLabel("Card Number")
+        card_label.setStyleSheet(self.get_label_style())
+        self.card_input = QLineEdit()
+        self.card_input.setPlaceholderText("1234 5678 9012 3456")
+        self.card_input.setStyleSheet(self.get_input_style())
+        form_layout.addRow(card_label, self.card_input)
+        
+        # Cardholder Name
+        name_label = QLabel("Cardholder Name")
+        name_label.setStyleSheet(self.get_label_style())
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("John Doe")
+        self.name_input.setStyleSheet(self.get_input_style())
+        form_layout.addRow(name_label, self.name_input)
+        
+        # Expiry Date
+        expiry_label = QLabel("Expiry Date (MM/YY)")
+        expiry_label.setStyleSheet(self.get_label_style())
+        self.expiry_input = QLineEdit()
+        self.expiry_input.setPlaceholderText("12/25")
+        self.expiry_input.setStyleSheet(self.get_input_style())
+        form_layout.addRow(expiry_label, self.expiry_input)
+        
+        # CVV
+        cvv_label = QLabel("CVV")
+        cvv_label.setStyleSheet(self.get_label_style())
+        self.cvv_input = QLineEdit()
+        self.cvv_input.setPlaceholderText("123")
+        self.cvv_input.setMaxLength(3)
+        self.cvv_input.setStyleSheet(self.get_input_style())
+        form_layout.addRow(cvv_label, self.cvv_input)
+        
+        layout.addLayout(form_layout)
+        
+        layout.addSpacing(20)
+        
+        # Info label
+        info_label = QLabel("⚠ This is a test payment form. Use any numbers for testing.")
+        info_label.setStyleSheet("color: #ffaa00; font-size: 11px; font-style: italic;")
+        info_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(info_label)
+        
+        layout.addSpacing(20)
+        
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(20)
+        btn_layout.setAlignment(Qt.AlignCenter)
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setStyleSheet(self.get_button_style())
+        cancel_btn.setMinimumWidth(150)
         cancel_btn.clicked.connect(self.reject)
-        buttons_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(cancel_btn)
         
-        layout.addLayout(buttons_layout)
+        pay_btn = QPushButton("Pay Now")
+        pay_btn.setStyleSheet(self.get_button_style())
+        pay_btn.setMinimumWidth(150)
+        pay_btn.clicked.connect(self.process_payment)
+        btn_layout.addWidget(pay_btn)
+        
+        layout.addLayout(btn_layout)
         
         self.setLayout(layout)
-    
-    def accept_selection(self):
-        """Acepta la selección y cierra el diálogo"""
-        date = self.calendar.selectedDate()
-        time = self.time_edit.time()
-        self.selected_datetime = date.toString("yyyy-MM-dd") + " " + time.toString("HH:mm")
+        
+    def process_payment(self):
+        """Procesa el pago (solo validación básica)"""
+        card = self.card_input.text().strip()
+        name = self.name_input.text().strip()
+        expiry = self.expiry_input.text().strip()
+        cvv = self.cvv_input.text().strip()
+        
+        # Validaciones básicas
+        if not card or len(card) < 13:
+            QMessageBox.warning(self, "Error", "Please enter a valid card number")
+            return
+        
+        if not name:
+            QMessageBox.warning(self, "Error", "Please enter the cardholder name")
+            return
+        
+        if not expiry or "/" not in expiry:
+            QMessageBox.warning(self, "Error", "Please enter expiry date (MM/YY)")
+            return
+        
+        if not cvv or len(cvv) != 3 or not cvv.isdigit():
+            QMessageBox.warning(self, "Error", "Please enter a valid CVV (3 digits)")
+            return
+        
+        # Simular procesamiento del pago
+        QMessageBox.information(self, "Success", f"Payment of ${self.amount:.2f} processed successfully!\n\nThank you for your purchase.")
+        self.payment_successful = True
         self.accept()
-    
-    def get_selected_datetime(self):
-        """Retorna la fecha y hora seleccionada"""
-        return self.selected_datetime
 
 
-class NewEventsWidget(QWidget):
-    """Pantalla de Crear Nuevos Eventos"""
-    def __init__(self, parent=None):
+class MyReservationsDialog(BaseDialog):
+    """Diálogo para ver mis reservas"""
+    def __init__(self, user_name, parent=None):
         super().__init__(parent)
-        self.parent_window = parent
+        self.user_name = user_name
+        self.setWindowTitle("RESERVATIONS")
+        self.setMinimumSize(800, 500)
         self.init_ui()
-    
+        
     def init_ui(self):
-        # Layout principal
-        main_layout = QHBoxLayout()
-        main_layout.setContentsMargins(60, 40, 60, 40)
-        main_layout.setSpacing(80)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
         
-        # Panel izquierdo - Formulario
-        left_panel = QWidget()
-        left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(20)
-        
-        # Título
-        title = QLabel("NEW EVENTS")
-        title_font = QFont("Arial", 24, QFont.Bold)
-        title.setFont(title_font)
+        title = QLabel("MY RESERVATIONS")
+        title.setFont(QFont("Arial", 20, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(title)
+        layout.addWidget(title)
         
-        left_layout.addSpacing(20)
-        
-        # Formulario
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(15)
-        
-        # Name
-        name_label = QLabel("Name")
-        name_label.setStyleSheet("color: white; font-size: 13px; font-style: italic;")
-        self.name_input = QLineEdit()
-        self.name_input.setStyleSheet(self.get_input_style())
-        self.name_input.setMinimumHeight(35)
-        form_layout.addWidget(name_label)
-        form_layout.addWidget(self.name_input)
-        
-        # Schedule
-        schedule_label = QLabel("Schedule")
-        schedule_label.setStyleSheet("color: white; font-size: 13px; font-style: italic;")
-        
-        schedule_container = QHBoxLayout()
-        self.schedule_input = QLineEdit()
-        self.schedule_input.setPlaceholderText("YYYY-MM-DD HH:MM")
-        self.schedule_input.setStyleSheet(self.get_input_style())
-        self.schedule_input.setMinimumHeight(35)
-        self.schedule_input.setReadOnly(True)
-        schedule_container.addWidget(self.schedule_input)
-        
-        schedule_btn = QPushButton("📅")
-        schedule_btn.setFont(QFont("Arial", 14))
-        schedule_btn.setStyleSheet("""
-            QPushButton {
+        self.table = QTableWidget()
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["Venue", "Date", "Time", "Status", "Action"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setStyleSheet("""
+            QTableWidget {
                 background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 5px 15px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
-        schedule_btn.setMaximumWidth(50)
-        schedule_btn.clicked.connect(self.open_calendar)
-        schedule_container.addWidget(schedule_btn)
-        
-        form_layout.addWidget(schedule_label)
-        form_layout.addLayout(schedule_container)
-        
-        # Location
-        location_label = QLabel("Location")
-        location_label.setStyleSheet("color: white; font-size: 13px; font-style: italic;")
-        self.location_input = QLineEdit()
-        self.location_input.setStyleSheet(self.get_input_style())
-        self.location_input.setMinimumHeight(35)
-        form_layout.addWidget(location_label)
-        form_layout.addWidget(self.location_input)
-        
-        # Capacity
-        capacity_label = QLabel("Capacity")
-        capacity_label.setStyleSheet("color: white; font-size: 13px; font-style: italic;")
-        self.capacity_input = QLineEdit()
-        self.capacity_input.setStyleSheet(self.get_input_style())
-        self.capacity_input.setMinimumHeight(35)
-        form_layout.addWidget(capacity_label)
-        form_layout.addWidget(self.capacity_input)
-        
-        left_layout.addLayout(form_layout)
-        left_layout.addSpacing(20)
-        
-        # Botones
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(15)
-        
-        back_btn = QPushButton("Back")
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(40)
-        back_btn.clicked.connect(self.on_back)
-        buttons_layout.addWidget(back_btn)
-        
-        save_btn = QPushButton("Save")
-        save_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        save_btn.setStyleSheet(self.get_button_style())
-        save_btn.setMinimumWidth(120)
-        save_btn.setMinimumHeight(40)
-        save_btn.clicked.connect(self.on_save)
-        buttons_layout.addWidget(save_btn)
-        
-        left_layout.addLayout(buttons_layout)
-        left_layout.addStretch()
-        
-        left_panel.setLayout(left_layout)
-        
-        # Panel derecho - Tabla de eventos
-        right_panel = QWidget()
-        right_layout = QVBoxLayout()
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(15)
-        
-        # Título
-        info_title = QLabel("INFO EVENTS")
-        info_title_font = QFont("Arial", 14, QFont.Bold)
-        info_title.setFont(info_title_font)
-        info_title.setStyleSheet("color: white;")
-        info_title.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(info_title)
-        
-        # Tabla
-        self.table = self.create_table()
-        right_layout.addWidget(self.table)
-        
-        # Botón Delete
-        delete_btn = QPushButton("Delete")
-        delete_btn.setFont(QFont("Arial", 11, QFont.Bold))
-        delete_btn.setStyleSheet(self.get_button_style())
-        delete_btn.setMinimumHeight(35)
-        delete_btn.clicked.connect(self.on_delete)
-        right_layout.addWidget(delete_btn, alignment=Qt.AlignCenter)
-        
-        right_layout.addStretch()
-        
-        right_panel.setLayout(right_layout)
-        
-        # Agregar paneles
-        main_layout.addWidget(left_panel, 1)
-        main_layout.addWidget(right_panel, 1)
-        
-        self.setLayout(main_layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
-        
-        # Cargar eventos
-        self.load_events()
-        self.selected_event_id = None
-    
-    def create_table(self):
-        """Crea la tabla de eventos"""
-        table = QFrame()
-        table_layout = QVBoxLayout()
-        table_layout.setContentsMargins(0, 0, 0, 0)
-        table_layout.setSpacing(0)
-        
-        # Header
-        header = QFrame()
-        header.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border: 1px solid black;
-            }
-        """)
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(5, 5, 5, 5)
-        header_layout.setSpacing(0)
-        
-        columns = ["Name", "Schedule", "Location", "Capacity"]
-        for col in columns:
-            label = QLabel(col)
-            label.setStyleSheet("color: black; font-weight: bold; font-size: 11px;")
-            label.setAlignment(Qt.AlignCenter)
-            header_layout.addWidget(label)
-        
-        header.setLayout(header_layout)
-        table_layout.addWidget(header)
-        
-        # Filas
-        scroll_area = QFrame()
-        scroll_layout = QVBoxLayout()
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(0)
-        
-        self.rows_container = QWidget()
-        self.rows_layout = QVBoxLayout()
-        self.rows_layout.setContentsMargins(0, 0, 0, 0)
-        self.rows_layout.setSpacing(0)
-        
-        self.rows_container.setLayout(self.rows_layout)
-        
-        scroll = QVBoxLayout()
-        scroll.addWidget(self.rows_container)
-        scroll.addStretch()
-        scroll_area.setLayout(scroll)
-        
-        table_layout.addWidget(scroll_area)
-        table.setLayout(table_layout)
-        return table
-    
-    def load_events(self):
-        """Carga los eventos en la tabla"""
-        global EVENTS_DB
-        
-        # Limpiar filas
-        while self.rows_layout.count():
-            self.rows_layout.takeAt(0).widget().deleteLater()
-        
-        # Agregar filas
-        for event_id, event in EVENTS_DB.items():
-            row = QFrame()
-            row.setStyleSheet("""
-                QFrame {
-                    background-color: white;
-                    border-bottom: 1px solid #ddd;
-                }
-            """)
-            row.setCursor(Qt.PointingHandCursor)
-            
-            row_layout = QHBoxLayout()
-            row_layout.setContentsMargins(5, 5, 5, 5)
-            row_layout.setSpacing(0)
-            
-            # Datos
-            data = [
-                event.get('name', ''),
-                event.get('schedule', ''),
-                event.get('location', ''),
-                event.get('capacity', '')
-            ]
-            
-            for value in data:
-                label = QLabel(str(value))
-                label.setStyleSheet("color: black; font-size: 10px;")
-                label.setAlignment(Qt.AlignCenter)
-                row_layout.addWidget(label)
-            
-            row.setLayout(row_layout)
-            row.mousePressEvent = lambda event_obj, eid=event_id: self.select_event(eid)
-            
-            self.rows_layout.addWidget(row)
-    
-    def select_event(self, event_id):
-        """Selecciona un evento"""
-        self.selected_event_id = event_id
-    
-    def open_calendar(self):
-        """Abre el diálogo de calendario"""
-        dialog = DateTimePickerDialog(self, self.schedule_input.text())
-        if dialog.exec_() == QDialog.Accepted:
-            selected_datetime = dialog.get_selected_datetime()
-            if selected_datetime:
-                self.schedule_input.setText(selected_datetime)
-    
-    def on_save(self):
-        """Guarda el nuevo evento"""
-        global EVENTS_DB
-        
-        name = self.name_input.text().strip()
-        schedule = self.schedule_input.text().strip()
-        location = self.location_input.text().strip()
-        capacity = self.capacity_input.text().strip()
-        
-        if not all([name, schedule, location, capacity]):
-            show_styled_message(self, "Error", "Por favor completa todos los campos", "warning")
-            return
-        
-        try:
-            int(capacity)
-        except ValueError:
-            show_styled_message(self, "Error", "La capacidad debe ser un número", "warning")
-            return
-        
-        # Crear nuevo evento
-        new_id = str(max([int(k) for k in EVENTS_DB.keys()], default=0) + 1)
-        EVENTS_DB[new_id] = {
-            'id': new_id,
-            'name': name,
-            'schedule': schedule,
-            'location': location,
-            'capacity': capacity,
-            'stage_id': '1'
-        }
-        
-        # Guardar
-        save_events_to_file(EVENTS_DB)
-        
-        show_styled_message(self, "Éxito", f"Evento '{name}' creado correctamente", "information")
-        self.clear_fields()
-        self.load_events()
-    
-    def on_delete(self):
-        """Elimina el evento seleccionado"""
-        global EVENTS_DB
-        
-        if not self.selected_event_id:
-            show_styled_message(self, "Error", "Por favor selecciona un evento para eliminar", "warning")
-            return
-        
-        event_name = EVENTS_DB[self.selected_event_id].get('name', '')
-        
-        # Diálogo de confirmación
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Confirmar eliminación")
-        msg_box.setText(f"¿Estás seguro de que deseas eliminar el evento '{event_name}'?")
-        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        msg_box.setDefaultButton(QMessageBox.No)
-        msg_box.setIcon(QMessageBox.Question)
-        msg_box.setStyleSheet("""
-            QMessageBox {
-                background-color: white;
-            }
-            QMessageBox QLabel {
                 color: black;
-                background-color: white;
-                margin: 0px;
+                gridline-color: #ccc;
             }
-            QMessageBox QAbstractButton {
-                background-color: #1e3a5f;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 25px;
-                min-width: 70px;
+            QHeaderView::section {
+                background-color: white;
+                color: black;
                 font-weight: bold;
-                margin: 0px 5px;
-            }
-            QMessageBox QAbstractButton:hover {
-                background-color: white;
-            }
-            QMessageBox QAbstractButton:pressed {
-                background-color: white;
+                border: 1px solid #ccc;
             }
         """)
+        layout.addWidget(self.table)
         
-        reply = msg_box.exec_()
+        close_btn = QPushButton("Back")
+        close_btn.setStyleSheet(self.get_button_style())
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn, alignment=Qt.AlignCenter)
+        
+        self.load_data()
+        self.setLayout(layout)
+        
+    def load_data(self):
+        reservations = database.get_all_reservations()
+        user_reservations = {k: v for k, v in reservations.items() if v.get("user") == self.user_name or v.get("user_email") == self.user_name}
+        
+        self.table.setRowCount(len(user_reservations))
+        
+        for i, (rid, res) in enumerate(user_reservations.items()):
+            self.table.setItem(i, 0, QTableWidgetItem(res["venue_name"]))
+            self.table.setItem(i, 1, QTableWidgetItem(res["date"]))
+            self.table.setItem(i, 2, QTableWidgetItem(res["time"]))
+            self.table.setItem(i, 3, QTableWidgetItem(res["status"]))
+            
+            if res["status"] == "cancelled":
+                status_label = QLabel("Cancelled")
+                status_label.setAlignment(Qt.AlignCenter)
+                status_label.setStyleSheet("color: gray; font-weight: bold;")
+                self.table.setCellWidget(i, 4, status_label)
+            else:
+                cancel_btn = QPushButton("Cancel")
+                cancel_btn.setStyleSheet("background-color: #ff4444; color: white; border-radius: 5px; padding: 5px;")
+                cancel_btn.clicked.connect(lambda checked, r=rid: self.cancel_reservation(r))
+                self.table.setCellWidget(i, 4, cancel_btn)
+            
+    def cancel_reservation(self, res_id):
+        reply = QMessageBox.question(self, 'Confirm', 
+                                   'Are you sure you want to cancel this reservation?',
+                                   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         
         if reply == QMessageBox.Yes:
-            del EVENTS_DB[self.selected_event_id]
-            save_events_to_file(EVENTS_DB)
-            
-            show_styled_message(self, "Éxito", f"Evento '{event_name}' eliminado correctamente", "information")
-            self.selected_event_id = None
-            self.load_events()
-    
-    def on_back(self):
-        """Vuelve al dashboard"""
-        self.parent_window.show_admin_dashboard()
-    
-    def clear_fields(self):
-        """Limpia los campos del formulario"""
-        self.name_input.clear()
-        self.schedule_input.clear()
-        self.location_input.clear()
-        self.capacity_input.clear()
-    
-    @staticmethod
-    def get_input_style():
-        return """
-            QLineEdit {
-                background-color: transparent;
-                border: 2px solid white;
-                border-radius: 0px;
-                padding: 8px;
-                font-size: 12px;
-                color: white;
-            }
-            QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 100);
-            }
-            QLineEdit:focus {
-                outline: none;
-                border: 2px solid #87CEEB;
-            }
-        """
-    
-    @staticmethod
-    def get_button_style():
-        return """
-            QPushButton {
+            database.update_reservation_status(res_id, 'cancelled')
+            self.load_data()
+
+class AdminReservationsDialog(BaseDialog):
+    """Diálogo para que el admin vea todas las reservas y su estado"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("ADMIN RESERVATIONS")
+        self.setMinimumSize(1000, 600)
+        self.init_ui()
+        
+    def init_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
+        
+        title = QLabel("ALL RESERVATIONS")
+        title.setFont(QFont("Arial", 20, QFont.Bold))
+        title.setStyleSheet("color: white;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(["User", "Venue", "Date", "Time", "Status", "Reserved"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setStyleSheet("""
+            QTableWidget {
                 background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 20px;
-                padding: 10px 30px;
+                color: black;
+                gridline-color: #ccc;
+            }
+            QHeaderView::section {
+                background-color: white;
+                color: black;
                 font-weight: bold;
-                cursor: pointer;
+                border: 1px solid #ccc;
             }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """
+        """)
+        layout.addWidget(self.table)
+        
+        # Botones
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(20)
+        btn_layout.setAlignment(Qt.AlignCenter)
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setStyleSheet(self.get_button_style())
+        cancel_btn.clicked.connect(self.cancel_reservation)
+        btn_layout.addWidget(cancel_btn)
+        
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.setStyleSheet(self.get_button_style())
+        refresh_btn.clicked.connect(self.load_data)
+        btn_layout.addWidget(refresh_btn)
+        
+        close_btn = QPushButton("Back")
+        close_btn.setStyleSheet(self.get_button_style())
+        close_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(close_btn)
+        
+        layout.addLayout(btn_layout)
+        
+        self.load_data()
+        self.setLayout(layout)
+        
+    def load_data(self):
+        reservations = database.get_all_reservations()
+        venues = database.get_all_venues()
+        
+        self.table.setRowCount(len(reservations))
+        
+        for i, (rid, res) in enumerate(reservations.items()):
+            user = res.get("user", res.get("user_email", "Unknown"))
+            venue_name = res.get("venue_name", "Unknown")
+            
+            # Verificar si el escenario fue reservado (si hay una reservación con status 'confirmed')
+            is_reserved = res.get("status", "") == "confirmed"
+            reserved_text = "Yes" if is_reserved else "No"
+            
+            self.table.setItem(i, 0, QTableWidgetItem(user))
+            self.table.setItem(i, 1, QTableWidgetItem(venue_name))
+            self.table.setItem(i, 2, QTableWidgetItem(res.get("date", "")))
+            self.table.setItem(i, 3, QTableWidgetItem(res.get("time", "")))
+            self.table.setItem(i, 4, QTableWidgetItem(res.get("status", "")))
+            self.table.setItem(i, 5, QTableWidgetItem(reserved_text))
+            
+            # Guardar el ID de la reserva
+            self.table.item(i, 0).setData(Qt.UserRole, rid)
+    
+    def cancel_reservation(self):
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            QMessageBox.warning(self, "Warning", "Please select a reservation to cancel")
+            return
+        
+        res_id = self.table.item(current_row, 0).data(Qt.UserRole)
+        
+        reply = QMessageBox.question(self, 'Confirm', 
+                                   'Are you sure you want to cancel this reservation?',
+                                   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            database.update_reservation_status(res_id, 'cancelled')
+            self.load_data()
 
-
-class WelcomeWidget(QWidget):
+class WelcomeWidget(BasePage):
     """Pantalla de Bienvenida"""
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -2147,7 +2038,7 @@ class WelcomeWidget(QWidget):
         
         # Título
         title = QLabel("SGED RANYAVE")
-        title_font = QFont("Arial", 32, QFont.Bold)
+        title_font = QFont("Arial", 36, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
@@ -2155,9 +2046,9 @@ class WelcomeWidget(QWidget):
         
         # Subtítulo
         subtitle = QLabel("¡Welcome to Ranyave!")
-        subtitle_font = QFont("Arial", 14)
+        subtitle_font = QFont("Arial", 16)
         subtitle.setFont(subtitle_font)
-        subtitle.setStyleSheet("color: #87CEEB;")
+        subtitle.setStyleSheet("color: white;")
         subtitle.setAlignment(Qt.AlignCenter)
         layout.addWidget(subtitle)
         
@@ -2165,47 +2056,21 @@ class WelcomeWidget(QWidget):
         
         # Botones
         login_btn = QPushButton("Iniciar Sesión")
-        login_btn.setFont(QFont("Arial", 14, QFont.Bold))
-        login_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 15px;
-                font-weight: bold;
-                min-width: 200px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
+        login_btn.setStyleSheet(self.get_button_style())
+        login_btn.setMinimumWidth(250)
         login_btn.clicked.connect(self.parent_window.show_login)
         layout.addWidget(login_btn, alignment=Qt.AlignCenter)
         
         register_btn = QPushButton("Registrarse")
-        register_btn.setFont(QFont("Arial", 14, QFont.Bold))
-        register_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 15px;
-                font-weight: bold;
-                min-width: 200px;
-            }
-            QPushButton:hover {
-                background-color: #7dbad1;
-            }
-        """)
+        register_btn.setStyleSheet(self.get_button_style())
+        register_btn.setMinimumWidth(250)
         register_btn.clicked.connect(self.parent_window.show_register)
         layout.addWidget(register_btn, alignment=Qt.AlignCenter)
         
         layout.addStretch()
         
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #1e3a5f;")
+
 
 
 class MainWindow(QMainWindow):
@@ -2218,9 +2083,6 @@ class MainWindow(QMainWindow):
         # Stack de widgets
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
-        
-        # Variable para guardar el dashboard actual
-        self.current_admin_dashboard = None
         
         # Crear pantallas
         self.welcome_widget = WelcomeWidget(self)
@@ -2247,15 +2109,9 @@ class MainWindow(QMainWindow):
         self.register_widget.clear_fields()
         self.stacked_widget.setCurrentWidget(self.register_widget)
     
-    def show_admin_dashboard(self):
-        """Vuelve al dashboard admin actual"""
-        if self.current_admin_dashboard:
-            self.stacked_widget.setCurrentWidget(self.current_admin_dashboard)
-    
     def login_user(self, name, role):
         if role == "admin":
             dashboard = AdminDashboard(name, self)
-            self.current_admin_dashboard = dashboard
         else:
             dashboard = UserDashboard(name, self)
         
@@ -2267,272 +2123,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec_())
-
-class RanyaveLogin(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.init_ui()
-    
-    def init_ui(self):
-        self.setWindowTitle("SGED RANYAVE")
-        self.setGeometry(100, 100, 1200, 700)
-        
-        # Crear widget central
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        # Layout principal horizontal
-        main_layout = QHBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-        
-        # ===================================================================
-        # PANEL IZQUIERDO - IMAGEN CUSTOM
-        # ===================================================================
-        left_panel = QWidget()
-        left_layout = QVBoxLayout()
-        left_layout.setAlignment(Qt.AlignCenter)
-        left_layout.setContentsMargins(40, 40, 40, 40)
-        
-        image_label = QLabel()
-        image_label.setAlignment(Qt.AlignCenter)
-        
-        # Intentar cargar imagen del usuario
-        pixmap = self.load_image(IMAGE_PATH)
-        if pixmap:
-            image_label.setPixmap(pixmap)
-            image_label.setScaledContents(False)
-        else:
-            # Imagen por defecto si no existe la ruta
-            pixmap = self.create_default_logo()
-            image_label.setPixmap(pixmap)
-        
-        left_layout.addWidget(image_label)
-        left_panel.setLayout(left_layout)
-        left_panel.setStyleSheet("background-color: #1e3a5f;")
-        
-        # ===================================================================
-        # PANEL DERECHO - FORMULARIO
-        # ===================================================================
-        right_panel = QWidget()
-        right_layout = QVBoxLayout()
-        right_layout.setSpacing(15)
-        right_layout.setContentsMargins(60, 60, 60, 60)
-        
-        # Título
-        title = QLabel("SGED RANYAVE")
-        title_font = QFont("Arial", 24, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(title)
-        
-        # Subtítulo
-        subtitle = QLabel("¡Welcome to Ranyave!")
-        subtitle_font = QFont("Arial", 13)
-        subtitle.setFont(subtitle_font)
-        subtitle.setStyleSheet("color: white;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(subtitle)
-        
-        # Espacio
-        right_layout.addSpacing(20)
-        
-        # Label Usuario
-        user_label = QLabel("Usuario")
-        user_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
-        right_layout.addWidget(user_label)
-        
-        # Input Usuario
-        self.username_input = QLineEdit()
-        self.username_input.setPlaceholderText("Ingresa tu usuario")
-        self.username_input.setStyleSheet("""
-            QLineEdit {
-                background-color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 12px;
-                font-size: 11px;
-                color: #333;
-            }
-            QLineEdit:focus {
-                outline: none;
-                background-color: #f0f0f0;
-            }
-        """)
-        self.username_input.setMinimumHeight(40)
-        right_layout.addWidget(self.username_input)
-        
-        # Label Contraseña
-        password_label = QLabel("Contraseña")
-        password_label.setStyleSheet("color: white; font-size: 11px; font-weight: bold;")
-        right_layout.addWidget(password_label)
-        
-        # Input Contraseña
-        self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Ingresa tu contraseña")
-        self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.setStyleSheet("""
-            QLineEdit {
-                background-color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 12px;
-                font-size: 11px;
-                color: #333;
-            }
-            QLineEdit:focus {
-                outline: none;
-                background-color: #f0f0f0;
-            }
-        """)
-        self.password_input.setMinimumHeight(40)
-        right_layout.addWidget(self.password_input)
-        
-        # Espacio
-        right_layout.addSpacing(15)
-        
-        # Botones
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
-        
-        login_btn = QPushButton("Login")
-        login_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        login_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 12px 40px;
-                font-weight: bold;
-                cursor: pointer;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
-        login_btn.clicked.connect(self.on_login)
-        buttons_layout.addWidget(login_btn)
-        
-        register_btn = QPushButton("Register")
-        register_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        register_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #1e3a5f;
-                border: none;
-                border-radius: 4px;
-                padding: 12px 35px;
-                font-weight: bold;
-                cursor: pointer;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        """)
-        register_btn.clicked.connect(self.on_register)
-        buttons_layout.addWidget(register_btn)
-        
-        buttons_layout.addStretch()
-        right_layout.addLayout(buttons_layout)
-        
-        # Agregar stretch al final
-        right_layout.addStretch()
-        
-        right_panel.setLayout(right_layout)
-        right_panel.setStyleSheet("background-color: #1e3a5f;")
-        
-        # Agregar paneles al layout principal
-        main_layout.addWidget(left_panel, 1)
-        main_layout.addWidget(right_panel, 1)
-        
-        central_widget.setLayout(main_layout)
-        
-        # Aplicar estilo oscuro
-        self.setStyleSheet("background-color: #1e3a5f;")
-    
-    def load_image(self, image_path):
-        """Carga una imagen desde una ruta.
-        
-        Args:
-            image_path (str): Ruta relativa o absoluta de la imagen
-            
-        Returns:
-            QPixmap: Imagen escalada, o None si no existe
-        """
-        # Intentar cargar desde ruta relativa
-        if os.path.exists(image_path):
-            pixmap = QPixmap(image_path)
-            if not pixmap.isNull():
-                # Escalar la imagen para que quepa en el panel
-                return pixmap.scaledToHeight(500, Qt.SmoothTransformation)
-        
-        # Intentar cargar desde ruta absoluta relativa al directorio del script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_dir, image_path)
-        
-        if os.path.exists(absolute_path):
-            pixmap = QPixmap(absolute_path)
-            if not pixmap.isNull():
-                return pixmap.scaledToHeight(500, Qt.SmoothTransformation)
-        
-        print(f"⚠ Imagen no encontrada en: {image_path}")
-        print(f"   Rutas buscadas:")
-        print(f"   - {image_path}")
-        print(f"   - {absolute_path}")
-        return None
-    
-    def create_default_logo(self):
-        """Crea un logo por defecto si no se encuentra imagen"""
-        size = 350
-        img = Image.new('RGBA', (size, size), color=(30, 58, 95, 0))
-        draw = ImageDraw.Draw(img)
-        
-        # Dibujar un logo de corredor estilizado
-        head_radius = 35
-        draw.ellipse([(150-head_radius, 50-head_radius), (150+head_radius, 50+head_radius)], fill='white')
-        draw.line([(150, 85), (140, 150)], fill='white', width=8)
-        draw.polygon([(140, 95), (90, 70), (110, 110)], fill='white')
-        draw.polygon([(160, 95), (210, 70), (190, 110)], fill='white')
-        draw.polygon([(140, 150), (120, 250), (135, 250)], fill='white')
-        draw.polygon([(140, 150), (170, 240), (185, 240)], fill='white')
-        
-        # Convertir a QPixmap
-        data = io.BytesIO()
-        img.save(data, format='PNG')
-        data.seek(0)
-        
-        pixmap = QPixmap()
-        pixmap.loadFromData(data.getvalue())
-        return pixmap.scaledToHeight(500, Qt.SmoothTransformation)
-    
-    def on_login(self):
-        username = self.username_input.text()
-        password = self.password_input.text()
-        
-        if username and password:
-            print(f"✓ Login exitoso: {username}")
-            self.clear_fields()
-        else:
-            print("⚠ Por favor completa todos los campos")
-    
-    def on_register(self):
-        print("→ Ir a pantalla de registro")
-    
-    def clear_fields(self):
-        self.username_input.clear()
-        self.password_input.clear()
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    login_window = RanyaveLogin()
-    login_window.show()
     sys.exit(app.exec_())
