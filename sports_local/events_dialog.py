@@ -11,6 +11,32 @@ class BaseDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setStyleSheet("background-color: #1e3a5f;")
+
+    def paintEvent(self, event):
+        """Pinta el fondo con líneas decorativas y símbolos"""
+        from PyQt5.QtGui import QPainter, QPen, QColor
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Fondo azul
+        painter.fillRect(self.rect(), QColor(30, 58, 95))
+        
+        # Líneas diagonales decorativas
+        pen = QPen(QColor(255, 255, 255, 50), 2)
+        painter.setPen(pen)
+        
+        w = self.width()
+        h = self.height()
+        
+        # Líneas estilo "Ranyave"
+        painter.drawLine(0, 50, 50, 0)
+        painter.drawLine(w, h-50, w-50, h)
+        
+        # Círculos decorativos sutiles
+        painter.setBrush(QColor(255, 255, 255, 10))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(w - 100, -30, 150, 150)
+        painter.drawEllipse(-30, h - 100, 150, 150)
         
     @staticmethod
     def get_button_style():
@@ -55,40 +81,40 @@ class EventsManagerDialog(BaseDialog):
         
     def init_ui(self):
         layout = QHBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(30)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
         
         # ===================================================================
         # LEFT SIDE: NEW EVENTS FORM
         # ===================================================================
         left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(10, 10, 10, 10)
+        left_layout.setContentsMargins(6, 6, 6, 6)
         
-        title_new = QLabel("NEW EVENTS")
+        title_new = QLabel("🎉 NEW EVENTS")
         title_new.setFont(QFont("Arial", 20, QFont.Bold))
         title_new.setStyleSheet("color: white;")
         title_new.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(title_new)
         
-        left_layout.addSpacing(20)
+        left_layout.addSpacing(8)
         
         form_layout = QFormLayout()
-        form_layout.setSpacing(15)
+        form_layout.setSpacing(8)
         form_layout.setLabelAlignment(Qt.AlignLeft)
         
         # Name
         self.name_input = QLineEdit()
         self.name_input.setStyleSheet(self.get_input_style())
-        form_layout.addRow(QLabel("Name", styleSheet=self.get_label_style()), self.name_input)
+        form_layout.addRow(QLabel("📝 Name", styleSheet=self.get_label_style()), self.name_input)
         
         # Schedule - Date and Time widgets
-        schedule_label = QLabel("Schedule Date", styleSheet=self.get_label_style())
+        schedule_label = QLabel("📅 Schedule Date", styleSheet=self.get_label_style())
         self.schedule_date = QDateEdit()
         self.schedule_date.setCalendarPopup(True)
         self.schedule_date.setStyleSheet(self.get_input_style())
         form_layout.addRow(schedule_label, self.schedule_date)
         
-        time_label = QLabel("Schedule Time", styleSheet=self.get_label_style())
+        time_label = QLabel("🕐 Schedule Time", styleSheet=self.get_label_style())
         self.schedule_time = QTimeEdit()
         self.schedule_time.setStyleSheet(self.get_input_style())
         form_layout.addRow(time_label, self.schedule_time)
@@ -96,29 +122,29 @@ class EventsManagerDialog(BaseDialog):
         # Location
         self.location_input = QLineEdit()
         self.location_input.setStyleSheet(self.get_input_style())
-        form_layout.addRow(QLabel("Location", styleSheet=self.get_label_style()), self.location_input)
+        form_layout.addRow(QLabel("📍 Location", styleSheet=self.get_label_style()), self.location_input)
         
         # Capacity
         self.capacity_input = QSpinBox()
         self.capacity_input.setRange(1, 100000)
         self.capacity_input.setStyleSheet(self.get_input_style())
-        form_layout.addRow(QLabel("Capacity", styleSheet=self.get_label_style()), self.capacity_input)
+        form_layout.addRow(QLabel("👥 Capacity", styleSheet=self.get_label_style()), self.capacity_input)
         
         left_layout.addLayout(form_layout)
         
-        left_layout.addSpacing(30)
+        left_layout.addSpacing(12)
         
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(20)
+        btn_layout.setSpacing(12)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("Back")
+        back_btn = QPushButton("⬅️ Back")
         back_btn.setStyleSheet(self.get_button_style())
         back_btn.clicked.connect(self.reject)
         btn_layout.addWidget(back_btn)
         
-        save_btn = QPushButton("Save")
+        save_btn = QPushButton("Save 💾")
         save_btn.setStyleSheet(self.get_button_style())
         save_btn.clicked.connect(self.save_event)
         btn_layout.addWidget(save_btn)
@@ -132,9 +158,9 @@ class EventsManagerDialog(BaseDialog):
         # RIGHT SIDE: INFO EVENTS TABLE
         # ===================================================================
         right_layout = QVBoxLayout()
-        right_layout.setContentsMargins(10, 10, 10, 10)
+        right_layout.setContentsMargins(6, 6, 6, 6)
         
-        title_info = QLabel("INFO EVENTS")
+        title_info = QLabel("ℹ️ INFO EVENTS")
         title_info.setFont(QFont("Arial", 20, QFont.Bold))
         title_info.setStyleSheet("color: white;")
         title_info.setAlignment(Qt.AlignCenter)
@@ -144,6 +170,12 @@ class EventsManagerDialog(BaseDialog):
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Name", "Schedule", "Location", "Capacity"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # Compact rows and font
+        try:
+            self.table.verticalHeader().setDefaultSectionSize(28)
+        except Exception:
+            pass
+        self.table.setFont(QFont("Segoe UI", 10))
         self.table.setStyleSheet("""
             QTableWidget {
                 background-color: white;
@@ -162,7 +194,7 @@ class EventsManagerDialog(BaseDialog):
         right_layout.addWidget(self.table)
         
         # Delete Button
-        delete_btn = QPushButton("Delete")
+        delete_btn = QPushButton("Delete 🗑️")
         delete_btn.setStyleSheet(self.get_button_style())
         delete_btn.clicked.connect(self.delete_event)
         right_layout.addWidget(delete_btn, alignment=Qt.AlignCenter)

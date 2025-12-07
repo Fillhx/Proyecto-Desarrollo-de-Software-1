@@ -68,15 +68,15 @@ class BasePage(QWidget):
         self.setStyleSheet("background-color: #1e3a5f;")
 
     def paintEvent(self, event):
-        """Pinta el fondo con líneas decorativas"""
+        """Pinta el fondo con líneas decorativas y símbolos"""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         
-        # Fondo azul
+        # Fondo azul oscuro
         painter.fillRect(self.rect(), QColor(30, 58, 95))
         
         # Líneas diagonales decorativas
-        pen = QPen(QColor(255, 255, 255), 2)
+        pen = QPen(QColor(255, 255, 255, 50), 2)  # Transparencia añadida
         painter.setPen(pen)
         
         w = self.width()
@@ -86,16 +86,26 @@ class BasePage(QWidget):
         # Esquina superior izquierda
         painter.drawLine(0, 100, 100, 0)
         painter.drawLine(0, 200, 200, 0)
+        painter.drawLine(0, 300, 300, 0)
         
         # Esquina inferior derecha
         painter.drawLine(w, h-100, w-100, h)
         painter.drawLine(w, h-200, w-200, h)
+        painter.drawLine(w, h-300, w-300, h)
         
         # Esquina superior derecha
         painter.drawLine(w, 100, w-100, 0)
+        painter.drawLine(w, 200, w-200, 0)
         
         # Esquina inferior izquierda
         painter.drawLine(0, h-100, 100, h)
+        painter.drawLine(0, h-200, 200, h)
+
+        # Círculos decorativos sutiles
+        painter.setBrush(QColor(255, 255, 255, 10))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(w - 150, -50, 200, 200)
+        painter.drawEllipse(-50, h - 150, 200, 200)
 
     @staticmethod
     def get_input_style():
@@ -168,7 +178,7 @@ class LoginWidget(BasePage):
         left_panel = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setAlignment(Qt.AlignCenter)
-        left_layout.setContentsMargins(40, 40, 40, 40)
+        left_layout.setContentsMargins(16, 16, 16, 16)
         
         image_label = QLabel()
         image_label.setAlignment(Qt.AlignCenter)
@@ -185,32 +195,32 @@ class LoginWidget(BasePage):
         # Panel derecho (formulario)
         right_panel = QWidget()
         right_layout = QVBoxLayout()
-        right_layout.setSpacing(20)
-        right_layout.setContentsMargins(80, 60, 80, 60)
+        right_layout.setSpacing(10)
+        right_layout.setContentsMargins(30, 20, 30, 20)
         
         # Título
-        title = QLabel("LOGIN")
-        title_font = QFont("Arial", 36, QFont.Bold)
+        title = QLabel("👤 LOGIN")
+        title_font = QFont("Segoe UI", 20, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(title)
         
-        right_layout.addSpacing(40)
+        right_layout.addSpacing(10)
         
         # Email/Usuario
-        email_label = QLabel("Email")
+        email_label = QLabel("📧 Email")
         email_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("")
+        self.email_input.setPlaceholderText("example@email.com")
         self.email_input.setStyleSheet(self.get_input_style())
-        self.email_input.setMinimumHeight(45)
+        self.email_input.setMinimumHeight(34)
         right_layout.addWidget(self.email_input)
         
         # Contraseña
-        password_label = QLabel("Password")
+        password_label = QLabel("🔒 Password")
         password_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(password_label)
         
@@ -218,37 +228,37 @@ class LoginWidget(BasePage):
         self.password_input.setPlaceholderText("")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setStyleSheet(self.get_input_style())
-        self.password_input.setMinimumHeight(45)
+        self.password_input.setMinimumHeight(34)
         right_layout.addWidget(self.password_input)
         
-        right_layout.addSpacing(30)
+        right_layout.addSpacing(8)
         
         # Botones
         buttons_layout = QVBoxLayout() # Cambiado a vertical para coincidir más con el estilo general
-        buttons_layout.setSpacing(15)
+        buttons_layout.setSpacing(8)
         buttons_layout.setAlignment(Qt.AlignCenter)
         
-        next_btn = QPushButton("Next")
+        next_btn = QPushButton("Next ➡️")
         next_btn.setStyleSheet(self.get_button_style())
-        next_btn.setMinimumWidth(150)
-        next_btn.setMinimumHeight(45)
+        next_btn.setMinimumWidth(120)
+        next_btn.setMinimumHeight(34)
         next_btn.clicked.connect(self.on_login)
         buttons_layout.addWidget(next_btn)
         
-        back_btn = QPushButton("Back")
+        back_btn = QPushButton("⬅️ Back")
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(150)
-        back_btn.setMinimumHeight(45)
+        back_btn.setMinimumWidth(120)
+        back_btn.setMinimumHeight(34)
         back_btn.clicked.connect(self.on_back)
         buttons_layout.addWidget(back_btn)
         
         right_layout.addLayout(buttons_layout)
         
-        right_layout.addSpacing(20)
+        right_layout.addSpacing(8)
         
         # Link a registro
         register_label = QLabel("¿No tienes cuenta? <a href='#' style='color: white; text-decoration: underline;'><b>Regístrate aquí</b></a>")
-        register_label.setStyleSheet("color: white; font-size: 12px;")
+        register_label.setStyleSheet("color: white; font-size: 11px;")
         register_label.setAlignment(Qt.AlignCenter)
         register_label.linkActivated.connect(self.on_register_link)
         right_layout.addWidget(register_label)
@@ -257,7 +267,7 @@ class LoginWidget(BasePage):
         
         right_panel.setLayout(right_layout)
         
-        main_layout.addWidget(left_panel, 1)
+        main_layout.addWidget(left_panel, 0)
         main_layout.addWidget(right_panel, 1)
         
         self.setLayout(main_layout)
@@ -307,7 +317,7 @@ class LoginWidget(BasePage):
         if os.path.exists(image_path):
             pixmap = QPixmap(image_path)
             if not pixmap.isNull():
-                return pixmap.scaledToHeight(500, Qt.SmoothTransformation)
+                return pixmap.scaledToHeight(260, Qt.SmoothTransformation)
         
         script_dir = os.path.dirname(os.path.abspath(__file__))
         absolute_path = os.path.join(script_dir, image_path)
@@ -315,12 +325,12 @@ class LoginWidget(BasePage):
         if os.path.exists(absolute_path):
             pixmap = QPixmap(absolute_path)
             if not pixmap.isNull():
-                return pixmap.scaledToHeight(500, Qt.SmoothTransformation)
+                return pixmap.scaledToHeight(260, Qt.SmoothTransformation)
         
         return None
     
     def create_default_logo(self):
-        size = 350
+        size = 260
         img = Image.new('RGBA', (size, size), color=(30, 58, 95, 0))
         draw = ImageDraw.Draw(img)
         
@@ -338,7 +348,7 @@ class LoginWidget(BasePage):
         
         pixmap = QPixmap()
         pixmap.loadFromData(data.getvalue())
-        return pixmap.scaledToHeight(500, Qt.SmoothTransformation)
+        return pixmap.scaledToHeight(260, Qt.SmoothTransformation)
     
     @staticmethod
     def get_input_style():
@@ -398,7 +408,7 @@ class RegisterWidget(BasePage):
         left_panel = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setAlignment(Qt.AlignCenter)
-        left_layout.setContentsMargins(40, 40, 40, 40)
+        left_layout.setContentsMargins(16, 16, 16, 16)
         
         image_label = QLabel()
         image_label.setAlignment(Qt.AlignCenter)
@@ -415,54 +425,54 @@ class RegisterWidget(BasePage):
         # Panel derecho (formulario)
         right_panel = QWidget()
         right_layout = QVBoxLayout()
-        right_layout.setSpacing(15)
-        right_layout.setContentsMargins(80, 40, 80, 40)
+        right_layout.setSpacing(8)
+        right_layout.setContentsMargins(30, 20, 30, 20)
         
         # Título
-        title = QLabel("REGISTER")
-        title_font = QFont("Arial", 36, QFont.Bold)
+        title = QLabel("📝 REGISTER")
+        title_font = QFont("Segoe UI", 20, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(title)
         
-        right_layout.addSpacing(20)
+        right_layout.addSpacing(8)
         
         # Nombre
-        name_label = QLabel("Name")
+        name_label = QLabel("👤 Name")
         name_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(name_label)
         
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("")
+        self.name_input.setPlaceholderText("Your Full Name")
         self.name_input.setStyleSheet(self.get_input_style())
-        self.name_input.setMinimumHeight(40)
+        self.name_input.setMinimumHeight(30)
         right_layout.addWidget(self.name_input)
         
         # Email
-        email_label = QLabel("Email")
+        email_label = QLabel("📧 Email")
         email_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("")
+        self.email_input.setPlaceholderText("example@email.com")
         self.email_input.setStyleSheet(self.get_input_style())
-        self.email_input.setMinimumHeight(40)
+        self.email_input.setMinimumHeight(30)
         right_layout.addWidget(self.email_input)
         
         # Teléfono
-        phone_label = QLabel("Cell Phone Number")
+        phone_label = QLabel("📱 Cell Phone Number")
         phone_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(phone_label)
         
         self.phone_input = QLineEdit()
-        self.phone_input.setPlaceholderText("")
+        self.phone_input.setPlaceholderText("1234567890")
         self.phone_input.setStyleSheet(self.get_input_style())
-        self.phone_input.setMinimumHeight(40)
+        self.phone_input.setMinimumHeight(30)
         right_layout.addWidget(self.phone_input)
         
         # Contraseña
-        password_label = QLabel("Password")
+        password_label = QLabel("🔒 Password")
         password_label.setStyleSheet(self.get_label_style())
         right_layout.addWidget(password_label)
         
@@ -470,27 +480,27 @@ class RegisterWidget(BasePage):
         self.password_input.setPlaceholderText("")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setStyleSheet(self.get_input_style())
-        self.password_input.setMinimumHeight(40)
+        self.password_input.setMinimumHeight(30)
         right_layout.addWidget(self.password_input)
         
-        right_layout.addSpacing(20)
+        right_layout.addSpacing(8)
         
         # Botones
         buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(15)
+        buttons_layout.setSpacing(8)
         buttons_layout.setAlignment(Qt.AlignCenter)
         
-        next_btn = QPushButton("Next")
+        next_btn = QPushButton("Next ➡️")
         next_btn.setStyleSheet(self.get_button_style())
-        next_btn.setMinimumWidth(150)
-        next_btn.setMinimumHeight(45)
+        next_btn.setMinimumWidth(120)
+        next_btn.setMinimumHeight(34)
         next_btn.clicked.connect(self.on_register)
         buttons_layout.addWidget(next_btn)
         
-        back_btn = QPushButton("Back")
+        back_btn = QPushButton("⬅️ Back")
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(150)
-        back_btn.setMinimumHeight(45)
+        back_btn.setMinimumWidth(120)
+        back_btn.setMinimumHeight(34)
         back_btn.clicked.connect(self.on_back)
         buttons_layout.addWidget(back_btn)
         
@@ -532,9 +542,14 @@ class RegisterWidget(BasePage):
             show_styled_message(self, "Error", "Este email ya está registrado", "warning")
             return
         
+        # Detectar si el email es de dominio ranyave.com
+        is_admin = email.endswith("@ranyave.com")
+        role = "admin" if is_admin else "user"
+        
         # Registrar usuario
-        if database.create_user(email, name, phone, password, "user"):
-            show_styled_message(self, "Éxito", f"¡Bienvenido {name}!\nTu registro fue completado. Ahora puedes iniciar sesión.", "information")
+        if database.create_user(email, name, phone, password, role):
+            role_text = "administrador" if is_admin else "usuario"
+            show_styled_message(self, "Éxito", f"¡Bienvenido {name}!\nTu registro fue completado como {role_text}. Ahora puedes iniciar sesión.", "information")
             self.clear_fields()
             self.parent_window.show_login()
         else:
@@ -648,70 +663,70 @@ class AdminDashboard(BasePage):
     def init_ui(self):
         # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(12)
         
         # Header con rol
         header_layout = QHBoxLayout()
         header_label = QLabel("ADMIN")
-        header_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
         header_layout.addStretch()
         header_layout.addWidget(header_label)
         main_layout.addLayout(header_layout)
-        
+
         # Título
-        title = QLabel("MANAGEMENT ADMIN")
-        title_font = QFont("Arial", 32, QFont.Bold)
+        title = QLabel("🛠️ MANAGEMENT ADMIN")
+        title_font = QFont("Segoe UI", 20, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title)
-        
-        main_layout.addSpacing(40)
+
+        main_layout.addSpacing(12)
         
         # Sección central con botones
         center_layout = QVBoxLayout()
-        center_layout.setSpacing(20)
+        center_layout.setSpacing(12)
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Botón NEW STAGES
-        new_stages_btn = QPushButton("NEW STAGES")
+        new_stages_btn = QPushButton("NEW STAGES 🏟️")
         new_stages_btn.setStyleSheet(self.get_button_style())
-        new_stages_btn.setMinimumWidth(250)
+        new_stages_btn.setMinimumWidth(160)
         new_stages_btn.clicked.connect(self.on_new_stages)
         center_layout.addWidget(new_stages_btn, alignment=Qt.AlignCenter)
         
         # Botón STAGES INFO
-        stages_info_btn = QPushButton("STAGES INFO")
+        stages_info_btn = QPushButton("STAGES INFO ℹ️")
         stages_info_btn.setStyleSheet(self.get_button_style())
-        stages_info_btn.setMinimumWidth(250)
+        stages_info_btn.setMinimumWidth(160)
         stages_info_btn.clicked.connect(self.on_stages_info)
         center_layout.addWidget(stages_info_btn, alignment=Qt.AlignCenter)
         
         # Botón RESERVATIONS
-        reservations_btn = QPushButton("RESERVATIONS")
+        reservations_btn = QPushButton("RESERVATIONS 📅")
         reservations_btn.setStyleSheet(self.get_button_style())
-        reservations_btn.setMinimumWidth(250)
+        reservations_btn.setMinimumWidth(160)
         reservations_btn.clicked.connect(self.on_reservations)
         center_layout.addWidget(reservations_btn, alignment=Qt.AlignCenter)
         
         # Botón Back to login
-        back_btn = QPushButton("Back to login")
+        back_btn = QPushButton("⬅️ Back to login")
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(250)
+        back_btn.setMinimumWidth(160)
         back_btn.clicked.connect(self.on_logout)
         center_layout.addWidget(back_btn, alignment=Qt.AlignCenter)
         
         main_layout.addLayout(center_layout)
         
-        main_layout.addSpacing(30)
-        
-        # Información de usuario (opcional)
-        user_info = QLabel(f"Sesión de: {self.user_name}")
-        user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 10px;")
+        main_layout.addSpacing(12)
+
+        # Información de usuario (compacta)
+        user_info = QLabel(f"Sesión: {self.user_name}")
+        user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 11px;")
         user_info.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(user_info)
-        
+
         main_layout.addStretch()
         
         self.setLayout(main_layout)
@@ -740,7 +755,7 @@ class BaseDialog(QDialog):
         self.setStyleSheet("background-color: #1e3a5f; color: white;")
     
     def paintEvent(self, event):
-        """Pinta el fondo con líneas decorativas"""
+        """Pinta el fondo con líneas decorativas y símbolos"""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         
@@ -748,7 +763,7 @@ class BaseDialog(QDialog):
         painter.fillRect(self.rect(), QColor(30, 58, 95))
         
         # Líneas diagonales decorativas
-        pen = QPen(QColor(255, 255, 255), 2)
+        pen = QPen(QColor(255, 255, 255, 50), 2)
         painter.setPen(pen)
         
         w = self.width()
@@ -757,6 +772,12 @@ class BaseDialog(QDialog):
         # Líneas estilo "Ranyave"
         painter.drawLine(0, 50, 50, 0)
         painter.drawLine(w, h-50, w-50, h)
+        
+        # Círculos decorativos sutiles
+        painter.setBrush(QColor(255, 255, 255, 10))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(w - 100, -30, 150, 150)
+        painter.drawEllipse(-30, h - 100, 150, 150)
 
     @staticmethod
     def get_input_style():
@@ -816,23 +837,23 @@ class VenueForm(BaseDialog):
         
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(50, 40, 50, 40)
-        layout.setSpacing(25)
+        layout.setContentsMargins(20, 14, 20, 14)
+        layout.setSpacing(12)
         
         # Title
-        title = QLabel("NEW SPORT STAGE")
-        title.setFont(QFont("Arial", 28, QFont.Bold))
+        title = QLabel("🏟️ NEW SPORT STAGE")
+        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         
         # Subtitle
-        subtitle = QLabel("Complete all fields to create a new sport stage")
-        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 12px;")
+        subtitle = QLabel("📝 Complete all fields to create a new sport stage")
+        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 11px;")
         subtitle.setAlignment(Qt.AlignCenter)
         layout.addWidget(subtitle)
         
-        layout.addSpacing(15)
+        layout.addSpacing(8)
         
         # Separator line
         separator = QFrame()
@@ -845,9 +866,9 @@ class VenueForm(BaseDialog):
         
         # Form with improved styling
         form_layout = QFormLayout()
-        form_layout.setSpacing(18)
+        form_layout.setSpacing(10)
         form_layout.setLabelAlignment(Qt.AlignLeft)
-        form_layout.setHorizontalSpacing(25)
+        form_layout.setHorizontalSpacing(12)
         
         # Name
         name_label = QLabel("📋 Venue Name")
@@ -855,7 +876,7 @@ class VenueForm(BaseDialog):
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("e.g., Football Field A")
         self.name_input.setStyleSheet(self.get_input_style())
-        self.name_input.setMinimumHeight(40)
+        self.name_input.setMinimumHeight(30)
         form_layout.addRow(name_label, self.name_input)
         
         # Type
@@ -864,7 +885,7 @@ class VenueForm(BaseDialog):
         self.type_input = QComboBox()
         self.type_input.addItems(["Fútbol", "Baloncesto", "Tenis", "Voleibol", "Natación", "Otro"])
         self.type_input.setStyleSheet(self.get_input_style())
-        self.type_input.setMinimumHeight(40)
+        self.type_input.setMinimumHeight(30)
         form_layout.addRow(type_label, self.type_input)
         
         # Location
@@ -873,7 +894,7 @@ class VenueForm(BaseDialog):
         self.location_input = QLineEdit()
         self.location_input.setPlaceholderText("e.g., Zone B, Building 3")
         self.location_input.setStyleSheet(self.get_input_style())
-        self.location_input.setMinimumHeight(40)
+        self.location_input.setMinimumHeight(30)
         form_layout.addRow(loc_label, self.location_input)
         
         # Capacity
@@ -883,7 +904,7 @@ class VenueForm(BaseDialog):
         self.capacity_input.setRange(1, 100000)
         self.capacity_input.setValue(50)
         self.capacity_input.setStyleSheet(self.get_input_style())
-        self.capacity_input.setMinimumHeight(40)
+        self.capacity_input.setMinimumHeight(30)
         form_layout.addRow(cap_label, self.capacity_input)
         
         # Schedule - Date
@@ -893,7 +914,7 @@ class VenueForm(BaseDialog):
         self.schedule_date.setCalendarPopup(True)
         self.schedule_date.setDate(QDate.currentDate())
         self.schedule_date.setStyleSheet(self.get_input_style())
-        self.schedule_date.setMinimumHeight(40)
+        self.schedule_date.setMinimumHeight(30)
         form_layout.addRow(sch_label, self.schedule_date)
         
         # Schedule - Time
@@ -902,7 +923,7 @@ class VenueForm(BaseDialog):
         self.schedule_time = QTimeEdit()
         self.schedule_time.setTime(QTime(12, 0))
         self.schedule_time.setStyleSheet(self.get_input_style())
-        self.schedule_time.setMinimumHeight(40)
+        self.schedule_time.setMinimumHeight(30)
         form_layout.addRow(time_label, self.schedule_time)
         
         # Price
@@ -914,12 +935,12 @@ class VenueForm(BaseDialog):
         self.price_input.setSingleStep(10.0)
         self.price_input.setValue(50.0)
         self.price_input.setStyleSheet(self.get_input_style())
-        self.price_input.setMinimumHeight(40)
+        self.price_input.setMinimumHeight(30)
         form_layout.addRow(price_label, self.price_input)
         
         layout.addLayout(form_layout)
         
-        layout.addSpacing(25)
+        layout.addSpacing(12)
         
         # Separator line
         separator2 = QFrame()
@@ -928,22 +949,22 @@ class VenueForm(BaseDialog):
         separator2.setStyleSheet("color: rgba(255, 255, 255, 100);")
         layout.addWidget(separator2)
         
-        layout.addSpacing(15)
+        layout.addSpacing(8)
         
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(20)
+        btn_layout.setSpacing(12)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("Cancel")
+        back_btn = QPushButton("Cancel ❌")
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(150)
-        back_btn.setMinimumHeight(45)
+        back_btn.setMinimumWidth(120)
+        back_btn.setMinimumHeight(34)
         back_btn.setFont(QFont("Arial", 12, QFont.Bold))
         back_btn.clicked.connect(self.reject)
         btn_layout.addWidget(back_btn)
         
-        save_btn = QPushButton("Save Stage")
+        save_btn = QPushButton("Save Stage 💾")
         save_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
@@ -960,7 +981,7 @@ class VenueForm(BaseDialog):
                 background-color: #45a049;
             }
         """)
-        save_btn.setFont(QFont("Arial", 12, QFont.Bold))
+        save_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
         save_btn.clicked.connect(self.save_venue)
         btn_layout.addWidget(save_btn)
         
@@ -1017,22 +1038,22 @@ class VenuesListDialog(BaseDialog):
         
     def init_ui(self):
         layout = QHBoxLayout()
-        layout.setContentsMargins(25, 25, 25, 25)
-        layout.setSpacing(25)
+        layout.setContentsMargins(14, 14, 14, 14)
+        layout.setSpacing(12)
         
         # Left side: Table
         left_layout = QVBoxLayout()
         left_layout.setSpacing(15)
         
         title = QLabel("📋 ALL SPORT STAGES")
-        title.setFont(QFont("Arial", 24, QFont.Bold))
+        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(title)
         
         # Subtitle
         subtitle = QLabel("Click on a stage to edit or delete")
-        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 11px;")
+        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 10px;")
         subtitle.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(subtitle)
         
@@ -1081,8 +1102,11 @@ class VenuesListDialog(BaseDialog):
             }
         """)
         
-        # Configurar altura de filas
-        self.table.verticalHeader().setDefaultSectionSize(45)
+        # Configurar altura de filas (compacta)
+        try:
+            self.table.verticalHeader().setDefaultSectionSize(28)
+        except Exception:
+            pass
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
@@ -1097,8 +1121,8 @@ class VenuesListDialog(BaseDialog):
         
         # Right side: Edit Form
         right_layout = QVBoxLayout()
-        right_layout.setContentsMargins(25, 25, 25, 25)
-        right_layout.setSpacing(15)
+        right_layout.setContentsMargins(12, 12, 12, 12)
+        right_layout.setSpacing(10)
         
         # Frame para el formulario
         form_frame = QFrame()
@@ -1110,11 +1134,12 @@ class VenuesListDialog(BaseDialog):
             }
         """)
         form_frame_layout = QVBoxLayout()
-        form_frame_layout.setContentsMargins(20, 20, 20, 20)
-        form_frame_layout.setSpacing(15)
+        form_frame_layout.setContentsMargins(12, 12, 12, 12)
+        form_frame_layout.setSpacing(10)
         
         edit_title = QLabel("✏️ EDIT STAGE INFO")
-        edit_title.setFont(QFont("Arial", 20, QFont.Bold))
+        edit_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        edit_title.setStyleSheet("color: white;")
         edit_title.setStyleSheet("color: white;")
         edit_title.setAlignment(Qt.AlignCenter)
         form_frame_layout.addWidget(edit_title)
@@ -1127,13 +1152,13 @@ class VenuesListDialog(BaseDialog):
         form_frame_layout.addWidget(separator2)
         
         form_layout = QFormLayout()
-        form_layout.setSpacing(16)
-        form_layout.setHorizontalSpacing(15)
+        form_layout.setSpacing(10)
+        form_layout.setHorizontalSpacing(12)
         
         # Name
         self.edit_name = QLineEdit()
         self.edit_name.setStyleSheet(self.get_input_style())
-        self.edit_name.setMinimumHeight(35)
+        self.edit_name.setMinimumHeight(28)
         name_label = QLabel("📋 Venue Name")
         name_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(name_label, self.edit_name)
@@ -1141,7 +1166,7 @@ class VenuesListDialog(BaseDialog):
         # Type
         self.edit_type = QLineEdit()
         self.edit_type.setStyleSheet(self.get_input_style())
-        self.edit_type.setMinimumHeight(35)
+        self.edit_type.setMinimumHeight(28)
         type_label = QLabel("⚽ Type")
         type_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(type_label, self.edit_type)
@@ -1149,7 +1174,7 @@ class VenuesListDialog(BaseDialog):
         # Location
         self.edit_location = QLineEdit()
         self.edit_location.setStyleSheet(self.get_input_style())
-        self.edit_location.setMinimumHeight(35)
+        self.edit_location.setMinimumHeight(28)
         location_label = QLabel("📍 Location")
         location_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(location_label, self.edit_location)
@@ -1157,7 +1182,7 @@ class VenuesListDialog(BaseDialog):
         # Capacity
         self.edit_capacity = QLineEdit()
         self.edit_capacity.setStyleSheet(self.get_input_style())
-        self.edit_capacity.setMinimumHeight(35)
+        self.edit_capacity.setMinimumHeight(28)
         capacity_label = QLabel("👥 Capacity")
         capacity_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(capacity_label, self.edit_capacity)
@@ -1166,7 +1191,7 @@ class VenuesListDialog(BaseDialog):
         self.edit_schedule_date = QDateEdit()
         self.edit_schedule_date.setCalendarPopup(True)
         self.edit_schedule_date.setStyleSheet(self.get_input_style())
-        self.edit_schedule_date.setMinimumHeight(35)
+        self.edit_schedule_date.setMinimumHeight(28)
         date_label = QLabel("📅 Schedule Date")
         date_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(date_label, self.edit_schedule_date)
@@ -1174,7 +1199,7 @@ class VenuesListDialog(BaseDialog):
         # Schedule Time
         self.edit_schedule_time = QTimeEdit()
         self.edit_schedule_time.setStyleSheet(self.get_input_style())
-        self.edit_schedule_time.setMinimumHeight(35)
+        self.edit_schedule_time.setMinimumHeight(28)
         time_label = QLabel("🕐 Schedule Time")
         time_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(time_label, self.edit_schedule_time)
@@ -1185,7 +1210,7 @@ class VenuesListDialog(BaseDialog):
         self.edit_price.setDecimals(2)
         self.edit_price.setSingleStep(10.0)
         self.edit_price.setStyleSheet(self.get_input_style())
-        self.edit_price.setMinimumHeight(35)
+        self.edit_price.setMinimumHeight(28)
         price_label = QLabel("💵 Price ($)")
         price_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         form_layout.addRow(price_label, self.edit_price)
@@ -1196,28 +1221,28 @@ class VenuesListDialog(BaseDialog):
         
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(15)
+        btn_layout.setSpacing(10)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("Cancel")
+        back_btn = QPushButton("Cancel ❌")
         back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(40)
+        back_btn.setMinimumWidth(110)
+        back_btn.setMinimumHeight(32)
         back_btn.clicked.connect(self.accept)
         btn_layout.addWidget(back_btn)
         
-        save_btn = QPushButton("Save Changes")
+        save_btn = QPushButton("Save Changes 💾")
         save_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
                 border: 1px solid #45a049;
-                padding: 8px 16px;
+                padding: 6px 12px;
                 font-weight: bold;
-                min-width: 120px;
-                min-height: 40px;
+                min-width: 110px;
+                min-height: 32px;
                 border-radius: 4px;
                 color: white;
-                font-size: 11px;
+                font-size: 10px;
             }
             QPushButton:hover {
                 background-color: #45a049;
@@ -1226,7 +1251,7 @@ class VenuesListDialog(BaseDialog):
         save_btn.clicked.connect(self.save_changes)
         btn_layout.addWidget(save_btn)
         
-        delete_btn = QPushButton("Delete")
+        delete_btn = QPushButton("Delete 🗑️")
         delete_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f44336;
@@ -1387,43 +1412,43 @@ class UserDashboard(BasePage):
     
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.setSpacing(20)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
         
         # Header con rol
         header_layout = QHBoxLayout()
         header_label = QLabel("USER")
-        header_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
         header_layout.addStretch()
         header_layout.addWidget(header_label)
         layout.addLayout(header_layout)
-        
+
         # Título
-        title = QLabel("MANAGEMENT USER")
-        title_font = QFont("Arial", 32, QFont.Bold)
+        title = QLabel("👤 MANAGEMENT USER")
+        title_font = QFont("Segoe UI", 20, QFont.Bold)
         title.setFont(title_font)
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
-        
-        layout.addSpacing(40)
+
+        layout.addSpacing(12)
         
         # Sección central con botones (Primera fila)
         center_layout = QHBoxLayout()
-        center_layout.setSpacing(40)
+        center_layout.setSpacing(16)
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Botón RESERVE
-        reserve_btn = QPushButton("RESERVE")
+        reserve_btn = QPushButton("RESERVE 📅")
         reserve_btn.setStyleSheet(self.get_button_style())
-        reserve_btn.setMinimumWidth(200)
+        reserve_btn.setMinimumWidth(140)
         reserve_btn.clicked.connect(self.on_reserve)
         center_layout.addWidget(reserve_btn)
         
         # Botón RESERVATIONS
-        reservations_btn = QPushButton("RESERVATIONS")
+        reservations_btn = QPushButton("MY RESERVATIONS 📋")
         reservations_btn.setStyleSheet(self.get_button_style())
-        reservations_btn.setMinimumWidth(200)
+        reservations_btn.setMinimumWidth(140)
         reservations_btn.clicked.connect(self.on_my_reservations)
         center_layout.addWidget(reservations_btn)
         
@@ -1431,31 +1456,29 @@ class UserDashboard(BasePage):
         
         # Segunda fila con botón de historial
         history_layout = QHBoxLayout()
-        history_layout.setSpacing(40)
+        history_layout.setSpacing(16)
         history_layout.setAlignment(Qt.AlignCenter)
         
-        history_btn = QPushButton("HISTORY")
+        history_btn = QPushButton("HISTORY 📜")
         history_btn.setStyleSheet(self.get_button_style())
-        history_btn.setMinimumWidth(200)
+        history_btn.setMinimumWidth(140)
         history_btn.clicked.connect(self.on_history)
         history_layout.addWidget(history_btn)
         
         layout.addLayout(history_layout)
         
-        layout.addSpacing(40)
-        
-        # Botón Back to login (centrado abajo)
-        bottom_layout = QVBoxLayout()
+        layout.addSpacing(12)
+
+        # Botón Back to login (compacto)
+        bottom_layout = QHBoxLayout()
         bottom_layout.setAlignment(Qt.AlignCenter)
-        
-        logout_btn = QPushButton("Back to login")
+        logout_btn = QPushButton("⬅️ Back to login")
         logout_btn.setStyleSheet(self.get_button_style())
-        logout_btn.setMinimumWidth(200)
+        logout_btn.setMinimumWidth(140)
+        logout_btn.setMaximumHeight(34)
         logout_btn.clicked.connect(self.on_logout)
         bottom_layout.addWidget(logout_btn)
-        
         layout.addLayout(bottom_layout)
-        
         layout.addStretch()
         
         self.setLayout(layout)
@@ -1494,7 +1517,7 @@ class ReservationDialog(BaseDialog):
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
         
-        title = QLabel("RESERVE A SPORT STAGE")
+        title = QLabel("📅 RESERVE A SPORT STAGE")
         title.setFont(QFont("Arial", 24, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
@@ -1540,13 +1563,13 @@ class ReservationDialog(BaseDialog):
         btn_layout.setSpacing(20)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("Back")
+        back_btn = QPushButton("⬅️ Back")
         back_btn.setStyleSheet(self.get_button_style())
         back_btn.setMinimumWidth(150)
         back_btn.clicked.connect(self.reject)
         btn_layout.addWidget(back_btn)
         
-        reserve_btn = QPushButton("Reserve")
+        reserve_btn = QPushButton("Reserve ✅")
         reserve_btn.setStyleSheet(self.get_button_style())
         reserve_btn.setMinimumWidth(150)
         reserve_btn.clicked.connect(self.make_reservation)
@@ -1716,7 +1739,7 @@ class PaymentDialog(BaseDialog):
         layout.setSpacing(20)
         
         # Title
-        title = QLabel("PAYMENT PROCESS")
+        title = QLabel("💳 PAYMENT PROCESS")
         title.setFont(QFont("Arial", 22, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
@@ -1746,7 +1769,7 @@ class PaymentDialog(BaseDialog):
         form_layout.setLabelAlignment(Qt.AlignLeft)
         
         # Card Number
-        card_label = QLabel("Card Number")
+        card_label = QLabel("💳 Card Number")
         card_label.setStyleSheet(self.get_label_style())
         self.card_input = QLineEdit()
         self.card_input.setPlaceholderText("1234 5678 9012 3456")
@@ -1754,7 +1777,7 @@ class PaymentDialog(BaseDialog):
         form_layout.addRow(card_label, self.card_input)
         
         # Cardholder Name
-        name_label = QLabel("Cardholder Name")
+        name_label = QLabel("👤 Cardholder Name")
         name_label.setStyleSheet(self.get_label_style())
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("John Doe")
@@ -1762,7 +1785,7 @@ class PaymentDialog(BaseDialog):
         form_layout.addRow(name_label, self.name_input)
         
         # Expiry Date
-        expiry_label = QLabel("Expiry Date (MM/YY)")
+        expiry_label = QLabel("📅 Expiry Date (MM/YY)")
         expiry_label.setStyleSheet(self.get_label_style())
         self.expiry_input = QLineEdit()
         self.expiry_input.setPlaceholderText("12/25")
@@ -1770,7 +1793,7 @@ class PaymentDialog(BaseDialog):
         form_layout.addRow(expiry_label, self.expiry_input)
         
         # CVV
-        cvv_label = QLabel("CVV")
+        cvv_label = QLabel("🔒 CVV")
         cvv_label.setStyleSheet(self.get_label_style())
         self.cvv_input = QLineEdit()
         self.cvv_input.setPlaceholderText("123")
@@ -1795,13 +1818,13 @@ class PaymentDialog(BaseDialog):
         btn_layout.setSpacing(20)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton("Cancel ❌")
         cancel_btn.setStyleSheet(self.get_button_style())
         cancel_btn.setMinimumWidth(150)
         cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(cancel_btn)
         
-        pay_btn = QPushButton("Pay Now")
+        pay_btn = QPushButton("Pay Now 💳")
         pay_btn.setStyleSheet(self.get_button_style())
         pay_btn.setMinimumWidth(150)
         pay_btn.clicked.connect(self.process_payment)
@@ -1855,7 +1878,7 @@ class MyReservationsDialog(BaseDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        title = QLabel("MY RESERVATIONS")
+        title = QLabel("📋 MY RESERVATIONS")
         title.setFont(QFont("Arial", 20, QFont.Bold))
         title.setStyleSheet("color: white;")
         title.setAlignment(Qt.AlignCenter)
@@ -2121,6 +2144,15 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    # Cargar estilo global QSS para una apariencia compacta y profesional
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        qss_path = os.path.join(script_dir, "styles.qss")
+        if os.path.exists(qss_path):
+            with open(qss_path, 'r', encoding='utf-8') as f:
+                app.setStyleSheet(f.read())
+    except Exception:
+        pass
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())

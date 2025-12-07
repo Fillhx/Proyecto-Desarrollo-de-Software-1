@@ -12,6 +12,32 @@ class BaseDialog(QDialog):
         self.setGeometry(100, 100, 800, 600)
         self.setStyleSheet("background-color: #1e1e1e;")
 
+    def paintEvent(self, event):
+        """Pinta el fondo con líneas decorativas y símbolos"""
+        from PyQt5.QtGui import QPainter, QPen, QColor
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Fondo azul oscuro (coincidiendo con el estilo general)
+        painter.fillRect(self.rect(), QColor(30, 58, 95))
+        
+        # Líneas diagonales decorativas
+        pen = QPen(QColor(255, 255, 255, 50), 2)
+        painter.setPen(pen)
+        
+        w = self.width()
+        h = self.height()
+        
+        # Líneas estilo "Ranyave"
+        painter.drawLine(0, 50, 50, 0)
+        painter.drawLine(w, h-50, w-50, h)
+        
+        # Círculos decorativos sutiles
+        painter.setBrush(QColor(255, 255, 255, 10))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(w - 100, -30, 150, 150)
+        painter.drawEllipse(-30, h - 100, 150, 150)
+
     @staticmethod
     def get_button_style():
         return """
@@ -65,18 +91,19 @@ class ReservationHistoryDialog(BaseDialog):
         
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(10)
         
         # Título
-        title = QLabel("RESERVATION HISTORY")
-        title.setFont(QFont("Arial", 22, QFont.Bold))
-        title.setStyleSheet("color: white; margin-bottom: 5px;")
+        title = QLabel("📜 RESERVATION HISTORY")
+        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        title.setObjectName("appTitle")
+        title.setStyleSheet("margin-bottom: 4px;")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         
         # Subtítulo con el nombre del usuario
-        subtitle = QLabel(f"User: {self.user_name}")
+        subtitle = QLabel(f"👤 User: {self.user_name}")
         subtitle.setFont(QFont("Arial", 11))
         subtitle.setStyleSheet("color: #aaaaaa;")
         subtitle.setAlignment(Qt.AlignCenter)
@@ -94,6 +121,13 @@ class ReservationHistoryDialog(BaseDialog):
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         self.table.setColumnWidth(5, 0)  # Columna invisible para separación
         
+        # Compact row height and smaller font for density
+        try:
+            self.table.verticalHeader().setDefaultSectionSize(28)
+        except Exception:
+            pass
+        self.table.setFont(QFont("Segoe UI", 10))
+
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet("""
             QTableWidget {
@@ -122,7 +156,7 @@ class ReservationHistoryDialog(BaseDialog):
         layout.addWidget(self.table)
         
         # Botón para cerrar
-        close_btn = QPushButton("Back")
+        close_btn = QPushButton("⬅️ Back")
         close_btn.setStyleSheet(self.get_button_style())
         close_btn.setMaximumWidth(150)
         close_btn.clicked.connect(self.accept)
