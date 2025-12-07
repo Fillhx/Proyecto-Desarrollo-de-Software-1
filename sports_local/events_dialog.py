@@ -75,7 +75,7 @@ class EventsManagerDialog(BaseDialog):
     """Diálogo para gestionar eventos (Crear y Listar)"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("EVENTS MANAGER")
+        self.setWindowTitle("GESTOR DE EVENTOS")
         self.setMinimumSize(1200, 700)
         self.init_ui()
         
@@ -90,7 +90,7 @@ class EventsManagerDialog(BaseDialog):
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(6, 6, 6, 6)
         
-        title_new = QLabel("🎉 NEW EVENTS")
+        title_new = QLabel("🎉 NUEVOS EVENTOS")
         title_new.setFont(QFont("Arial", 20, QFont.Bold))
         title_new.setStyleSheet("color: white;")
         title_new.setAlignment(Qt.AlignCenter)
@@ -105,16 +105,16 @@ class EventsManagerDialog(BaseDialog):
         # Name
         self.name_input = QLineEdit()
         self.name_input.setStyleSheet(self.get_input_style())
-        form_layout.addRow(QLabel("📝 Name", styleSheet=self.get_label_style()), self.name_input)
+        form_layout.addRow(QLabel("📝 Nombre", styleSheet=self.get_label_style()), self.name_input)
         
         # Schedule - Date and Time widgets
-        schedule_label = QLabel("📅 Schedule Date", styleSheet=self.get_label_style())
+        schedule_label = QLabel("📅 Fecha Programada", styleSheet=self.get_label_style())
         self.schedule_date = QDateEdit()
         self.schedule_date.setCalendarPopup(True)
         self.schedule_date.setStyleSheet(self.get_input_style())
         form_layout.addRow(schedule_label, self.schedule_date)
         
-        time_label = QLabel("🕐 Schedule Time", styleSheet=self.get_label_style())
+        time_label = QLabel("🕐 Hora Programada", styleSheet=self.get_label_style())
         self.schedule_time = QTimeEdit()
         self.schedule_time.setStyleSheet(self.get_input_style())
         form_layout.addRow(time_label, self.schedule_time)
@@ -122,13 +122,13 @@ class EventsManagerDialog(BaseDialog):
         # Location
         self.location_input = QLineEdit()
         self.location_input.setStyleSheet(self.get_input_style())
-        form_layout.addRow(QLabel("📍 Location", styleSheet=self.get_label_style()), self.location_input)
+        form_layout.addRow(QLabel("📍 Ubicación", styleSheet=self.get_label_style()), self.location_input)
         
         # Capacity
         self.capacity_input = QSpinBox()
         self.capacity_input.setRange(1, 100000)
         self.capacity_input.setStyleSheet(self.get_input_style())
-        form_layout.addRow(QLabel("👥 Capacity", styleSheet=self.get_label_style()), self.capacity_input)
+        form_layout.addRow(QLabel("👥 Capacidad", styleSheet=self.get_label_style()), self.capacity_input)
         
         left_layout.addLayout(form_layout)
         
@@ -139,12 +139,12 @@ class EventsManagerDialog(BaseDialog):
         btn_layout.setSpacing(12)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("⬅️ Back")
+        back_btn = QPushButton("⬅️ Volver")
         back_btn.setStyleSheet(self.get_button_style())
         back_btn.clicked.connect(self.reject)
         btn_layout.addWidget(back_btn)
         
-        save_btn = QPushButton("Save 💾")
+        save_btn = QPushButton("Guardar 💾")
         save_btn.setStyleSheet(self.get_button_style())
         save_btn.clicked.connect(self.save_event)
         btn_layout.addWidget(save_btn)
@@ -160,7 +160,7 @@ class EventsManagerDialog(BaseDialog):
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(6, 6, 6, 6)
         
-        title_info = QLabel("ℹ️ INFO EVENTS")
+        title_info = QLabel("ℹ️ INFO EVENTOS")
         title_info.setFont(QFont("Arial", 20, QFont.Bold))
         title_info.setStyleSheet("color: white;")
         title_info.setAlignment(Qt.AlignCenter)
@@ -168,7 +168,7 @@ class EventsManagerDialog(BaseDialog):
         
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Name", "Schedule", "Location", "Capacity"])
+        self.table.setHorizontalHeaderLabels(["Nombre", "Horario", "Ubicación", "Capacidad"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         # Compact rows and font
         try:
@@ -194,7 +194,7 @@ class EventsManagerDialog(BaseDialog):
         right_layout.addWidget(self.table)
         
         # Delete Button
-        delete_btn = QPushButton("Delete 🗑️")
+        delete_btn = QPushButton("Eliminar 🗑️")
         delete_btn.setStyleSheet(self.get_button_style())
         delete_btn.clicked.connect(self.delete_event)
         right_layout.addWidget(delete_btn, alignment=Qt.AlignCenter)
@@ -215,7 +215,7 @@ class EventsManagerDialog(BaseDialog):
         schedule = f"{date_str} {time_str}"
         
         if not all([name, location]):
-            QMessageBox.warning(self, "Error", "Please fill all fields")
+            QMessageBox.warning(self, "Error", "Por favor completa todos los campos")
             return
             
         event_id = str(uuid.uuid4())
@@ -230,7 +230,7 @@ class EventsManagerDialog(BaseDialog):
         database.create_event(event_data)
         self.clear_form()
         self.load_events()
-        QMessageBox.information(self, "Success", "Event created successfully!")
+        QMessageBox.information(self, "Éxito", "¡Evento creado exitosamente!")
         
     def load_events(self):
         self.events = database.get_all_events()
@@ -246,13 +246,13 @@ class EventsManagerDialog(BaseDialog):
     def delete_event(self):
         current_row = self.table.currentRow()
         if current_row < 0:
-            QMessageBox.warning(self, "Warning", "Please select an event to delete")
+            QMessageBox.warning(self, "Advertencia", "Por favor selecciona un evento para eliminar")
             return
             
         event_id = self.table.item(current_row, 0).data(Qt.UserRole)
         
-        reply = QMessageBox.question(self, 'Confirm', 
-                                   'Are you sure you want to delete this event?',
+        reply = QMessageBox.question(self, 'Confirmar', 
+                                   '¿Estás seguro de que deseas eliminar este evento?',
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         
         if reply == QMessageBox.Yes:

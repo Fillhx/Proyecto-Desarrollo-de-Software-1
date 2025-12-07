@@ -85,7 +85,7 @@ class ReservationHistoryDialog(BaseDialog):
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
-        self.setWindowTitle("RESERVATION HISTORY")
+        self.setWindowTitle("HISTORIAL DE RESERVAS")
         self.setMinimumSize(1100, 600)
         self.init_ui()
         
@@ -95,7 +95,7 @@ class ReservationHistoryDialog(BaseDialog):
         layout.setSpacing(10)
         
         # Título
-        title = QLabel("📜 RESERVATION HISTORY")
+        title = QLabel("📜 HISTORIAL DE RESERVAS")
         title.setFont(QFont("Segoe UI", 16, QFont.Bold))
         title.setObjectName("appTitle")
         title.setStyleSheet("margin-bottom: 4px;")
@@ -103,7 +103,7 @@ class ReservationHistoryDialog(BaseDialog):
         layout.addWidget(title)
         
         # Subtítulo con el nombre del usuario
-        subtitle = QLabel(f"👤 User: {self.user_name}")
+        subtitle = QLabel(f"👤 Usuario: {self.user_name}")
         subtitle.setFont(QFont("Arial", 11))
         subtitle.setStyleSheet("color: #aaaaaa;")
         subtitle.setAlignment(Qt.AlignCenter)
@@ -112,7 +112,7 @@ class ReservationHistoryDialog(BaseDialog):
         # Tabla con historial
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["Venue", "Date", "Time", "Status", "Type", ""])
+        self.table.setHorizontalHeaderLabels(["Escenario", "Fecha", "Hora", "Estado", "Tipo", ""])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -156,7 +156,7 @@ class ReservationHistoryDialog(BaseDialog):
         layout.addWidget(self.table)
         
         # Botón para cerrar
-        close_btn = QPushButton("⬅️ Back")
+        close_btn = QPushButton("⬅️ Volver")
         close_btn.setStyleSheet(self.get_button_style())
         close_btn.setMaximumWidth(150)
         close_btn.clicked.connect(self.accept)
@@ -178,7 +178,7 @@ class ReservationHistoryDialog(BaseDialog):
             
             if not user_reservations:
                 self.table.setRowCount(1)
-                empty_item = QTableWidgetItem("No reservations found")
+                empty_item = QTableWidgetItem("No se encontraron reservas")
                 empty_item.setForeground(QColor("#999999"))
                 self.table.setItem(0, 0, empty_item)
                 return
@@ -193,7 +193,7 @@ class ReservationHistoryDialog(BaseDialog):
                 
                 # Determinar el tipo (Confirmed o Cancelled)
                 is_cancelled = status == "cancelled"
-                status_type = "Cancelled" if is_cancelled else "Confirmed"
+                status_type = "Cancelado" if is_cancelled else "Confirmado"
                 
                 # Crear items de la tabla
                 venue_item = QTableWidgetItem(venue_name)
@@ -228,5 +228,5 @@ class ReservationHistoryDialog(BaseDialog):
                 self.table.setItem(i, 4, type_item)
                 
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error loading history: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Error cargando historial: {str(e)}")
 
