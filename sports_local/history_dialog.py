@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushBut
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 import database
+from i18n import tr, get_language_manager
 
 
 class BaseDialog(QDialog):
@@ -85,8 +86,12 @@ class ReservationHistoryDialog(BaseDialog):
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
-        self.setWindowTitle("HISTORIAL DE RESERVAS")
+        self.setWindowTitle(tr("user_history"))
         self.setMinimumSize(1100, 600)
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
         self.init_ui()
         
     def init_ui(self):
@@ -95,24 +100,24 @@ class ReservationHistoryDialog(BaseDialog):
         layout.setSpacing(10)
         
         # Título
-        title = QLabel("📜 HISTORIAL DE RESERVAS")
-        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        title.setObjectName("appTitle")
-        title.setStyleSheet("margin-bottom: 4px;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title = QLabel(tr("history_title"))
+        self.title.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        self.title.setObjectName("appTitle")
+        self.title.setStyleSheet("margin-bottom: 4px;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
         
         # Subtítulo con el nombre del usuario
-        subtitle = QLabel(f"👤 Usuario: {self.user_name}")
-        subtitle.setFont(QFont("Arial", 11))
-        subtitle.setStyleSheet("color: #aaaaaa;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle)
+        self.subtitle = QLabel(tr("history_subtitle", name=self.user_name))
+        self.subtitle.setFont(QFont("Arial", 11))
+        self.subtitle.setStyleSheet("color: #aaaaaa;")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.subtitle)
         
         # Tabla con historial
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["Escenario", "Fecha", "Hora", "Estado", "Tipo", ""])
+        self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -156,18 +161,32 @@ class ReservationHistoryDialog(BaseDialog):
         layout.addWidget(self.table)
         
         # Botón para cerrar
-        close_btn = QPushButton("⬅️ Volver")
-        close_btn.setStyleSheet(self.get_button_style())
-        close_btn.setMaximumWidth(150)
-        close_btn.clicked.connect(self.accept)
+        self.close_btn = QPushButton(tr("history_back"))
+        self.close_btn.setStyleSheet(self.get_button_style())
+        self.close_btn.setMaximumWidth(150)
+        self.close_btn.clicked.connect(self.accept)
         close_layout = QHBoxLayout()
         close_layout.addStretch()
-        close_layout.addWidget(close_btn)
+        close_layout.addWidget(self.close_btn)
         close_layout.addStretch()
         layout.addLayout(close_layout)
         
         self.load_data()
         self.setLayout(layout)
+    
+    def update_table_headers(self):
+        """Actualiza los encabezados de la tabla con el idioma actual"""
+        headers = tr("history_table_headers").split("|")
+        self.table.setHorizontalHeaderLabels(headers)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.setWindowTitle(tr("user_history"))
+        self.title.setText(tr("history_title"))
+        self.subtitle.setText(tr("history_subtitle", name=self.user_name))
+        self.update_table_headers()
+        self.close_btn.setText(tr("history_back"))
+        self.load_data()
         
     def load_data(self):
         try:
@@ -178,7 +197,7 @@ class ReservationHistoryDialog(BaseDialog):
             
             if not user_reservations:
                 self.table.setRowCount(1)
-                empty_item = QTableWidgetItem("No se encontraron reservas")
+                empty_item = QTableWidgetItem(tr("history_no_reservations"))
                 empty_item.setForeground(QColor("#999999"))
                 self.table.setItem(0, 0, empty_item)
                 return
@@ -193,7 +212,7 @@ class ReservationHistoryDialog(BaseDialog):
                 
                 # Determinar el tipo (Confirmed o Cancelled)
                 is_cancelled = status == "cancelled"
-                status_type = "Cancelado" if is_cancelled else "Confirmado"
+                status_type = tr("history_cancelled") if is_cancelled else tr("history_confirmed")
                 
                 # Crear items de la tabla
                 venue_item = QTableWidgetItem(venue_name)

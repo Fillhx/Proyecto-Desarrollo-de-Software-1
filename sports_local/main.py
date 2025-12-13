@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 import io
 import uuid  # Para generar IDs únicos
 import database  # Importar módulo de base de datos
+from i18n import get_language_manager, tr  # Importar sistema de idiomas
 
 # ============================================================================
 # CONFIGURACIÓN: Ruta de la imagen del lado izquierdo
@@ -167,6 +168,9 @@ class LoginWidget(BasePage):
         super().__init__(parent)
         self.parent_window = parent
         self.init_ui()
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
     
     def init_ui(self):
         # Layout principal
@@ -190,7 +194,6 @@ class LoginWidget(BasePage):
         
         left_layout.addWidget(image_label)
         left_panel.setLayout(left_layout)
-        # left_panel.setStyleSheet("background-color: #1e3a5f;") # Ya no es necesario, BasePage lo maneja
         
         # Panel derecho (formulario)
         right_panel = QWidget()
@@ -199,30 +202,30 @@ class LoginWidget(BasePage):
         right_layout.setContentsMargins(30, 20, 30, 20)
         
         # Título
-        title = QLabel("👤 INICIAR SESIÓN")
+        self.title = QLabel(tr("login_title"))
         title_font = QFont("Segoe UI", 20, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(title)
+        self.title.setFont(title_font)
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        right_layout.addWidget(self.title)
         
         right_layout.addSpacing(10)
         
         # Email/Usuario
-        email_label = QLabel("📧 Correo")
-        email_label.setStyleSheet(self.get_label_style())
-        right_layout.addWidget(email_label)
+        self.email_label = QLabel(tr("login_email"))
+        self.email_label.setStyleSheet(self.get_label_style())
+        right_layout.addWidget(self.email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("ejemplo@correo.com")
+        self.email_input.setPlaceholderText(tr("login_email_placeholder"))
         self.email_input.setStyleSheet(self.get_input_style())
         self.email_input.setMinimumHeight(34)
         right_layout.addWidget(self.email_input)
         
         # Contraseña
-        password_label = QLabel("🔒 Contraseña")
-        password_label.setStyleSheet(self.get_label_style())
-        right_layout.addWidget(password_label)
+        self.password_label = QLabel(tr("login_password"))
+        self.password_label.setStyleSheet(self.get_label_style())
+        right_layout.addWidget(self.password_label)
         
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("")
@@ -234,34 +237,34 @@ class LoginWidget(BasePage):
         right_layout.addSpacing(8)
         
         # Botones
-        buttons_layout = QVBoxLayout() # Cambiado a vertical para coincidir más con el estilo general
+        buttons_layout = QVBoxLayout()
         buttons_layout.setSpacing(8)
         buttons_layout.setAlignment(Qt.AlignCenter)
         
-        next_btn = QPushButton("Siguiente ➡️")
-        next_btn.setStyleSheet(self.get_button_style())
-        next_btn.setMinimumWidth(120)
-        next_btn.setMinimumHeight(34)
-        next_btn.clicked.connect(self.on_login)
-        buttons_layout.addWidget(next_btn)
+        self.next_btn = QPushButton(tr("login_next"))
+        self.next_btn.setStyleSheet(self.get_button_style())
+        self.next_btn.setMinimumWidth(120)
+        self.next_btn.setMinimumHeight(34)
+        self.next_btn.clicked.connect(self.on_login)
+        buttons_layout.addWidget(self.next_btn)
         
-        back_btn = QPushButton("⬅️ Atrás")
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(34)
-        back_btn.clicked.connect(self.on_back)
-        buttons_layout.addWidget(back_btn)
+        self.back_btn = QPushButton(tr("login_back"))
+        self.back_btn.setStyleSheet(self.get_button_style())
+        self.back_btn.setMinimumWidth(120)
+        self.back_btn.setMinimumHeight(34)
+        self.back_btn.clicked.connect(self.on_back)
+        buttons_layout.addWidget(self.back_btn)
         
         right_layout.addLayout(buttons_layout)
         
         right_layout.addSpacing(8)
         
         # Link a registro
-        register_label = QLabel("¿No tienes cuenta? <a href='#' style='color: white; text-decoration: underline;'><b>Regístrate aquí</b></a>")
-        register_label.setStyleSheet("color: white; font-size: 11px;")
-        register_label.setAlignment(Qt.AlignCenter)
-        register_label.linkActivated.connect(self.on_register_link)
-        right_layout.addWidget(register_label)
+        self.register_label = QLabel(tr("login_register_text"))
+        self.register_label.setStyleSheet("color: white; font-size: 11px;")
+        self.register_label.setAlignment(Qt.AlignCenter)
+        self.register_label.linkActivated.connect(self.on_register_link)
+        right_layout.addWidget(self.register_label)
         
         right_layout.addStretch()
         
@@ -272,18 +275,27 @@ class LoginWidget(BasePage):
         
         self.setLayout(main_layout)
 
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.title.setText(tr("login_title"))
+        self.email_label.setText(tr("login_email"))
+        self.email_input.setPlaceholderText(tr("login_email_placeholder"))
+        self.password_label.setText(tr("login_password"))
+        self.next_btn.setText(tr("login_next"))
+        self.back_btn.setText(tr("login_back"))
+        self.register_label.setText(tr("login_register_text"))
     
     def on_login(self):
         email = self.email_input.text().strip()
         password = self.password_input.text().strip()
         
         if not email or not password:
-            show_styled_message(self, "Error", "Por favor completa todos los campos", "warning")
+            show_styled_message(self, tr("error"), tr("login_error_empty"), "warning")
             return
         
         # Validar email
         if not self.is_valid_email(email):
-            show_styled_message(self, "Error", "Por favor ingresa un email válido", "warning")
+            show_styled_message(self, tr("error"), tr("login_error_invalid_email"), "warning")
             return
         
         # Verificar en BD
@@ -295,7 +307,7 @@ class LoginWidget(BasePage):
             self.parent_window.login_user(name, role)
             return
         
-        show_styled_message(self, "Error", "Email o contraseña incorrectos", "warning")
+        show_styled_message(self, tr("error"), tr("login_error_invalid_credentials"), "warning")
         self.clear_fields()
     
     def on_back(self):
@@ -397,6 +409,9 @@ class RegisterWidget(BasePage):
         super().__init__(parent)
         self.parent_window = parent
         self.init_ui()
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
     
     def init_ui(self):
         # Layout principal
@@ -420,7 +435,6 @@ class RegisterWidget(BasePage):
         
         left_layout.addWidget(image_label)
         left_panel.setLayout(left_layout)
-        # left_panel.setStyleSheet("background-color: #1e3a5f;") # BasePage
         
         # Panel derecho (formulario)
         right_panel = QWidget()
@@ -429,52 +443,52 @@ class RegisterWidget(BasePage):
         right_layout.setContentsMargins(30, 20, 30, 20)
         
         # Título
-        title = QLabel("📝 REGISTRO")
+        self.title = QLabel(tr("register_title"))
         title_font = QFont("Segoe UI", 20, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(title)
+        self.title.setFont(title_font)
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        right_layout.addWidget(self.title)
         
         right_layout.addSpacing(8)
         
         # Nombre
-        name_label = QLabel("👤 Nombre")
-        name_label.setStyleSheet(self.get_label_style())
-        right_layout.addWidget(name_label)
+        self.name_label = QLabel(tr("register_name"))
+        self.name_label.setStyleSheet(self.get_label_style())
+        right_layout.addWidget(self.name_label)
         
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Tu Nombre Completo")
+        self.name_input.setPlaceholderText(tr("register_name_placeholder"))
         self.name_input.setStyleSheet(self.get_input_style())
         self.name_input.setMinimumHeight(30)
         right_layout.addWidget(self.name_input)
         
         # Email
-        email_label = QLabel("📧 Correo")
-        email_label.setStyleSheet(self.get_label_style())
-        right_layout.addWidget(email_label)
+        self.email_label = QLabel(tr("register_email"))
+        self.email_label.setStyleSheet(self.get_label_style())
+        right_layout.addWidget(self.email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("ejemplo@correo.com")
+        self.email_input.setPlaceholderText(tr("register_email_placeholder"))
         self.email_input.setStyleSheet(self.get_input_style())
         self.email_input.setMinimumHeight(30)
         right_layout.addWidget(self.email_input)
         
         # Teléfono
-        phone_label = QLabel("📱 Número de Celular")
-        phone_label.setStyleSheet(self.get_label_style())
-        right_layout.addWidget(phone_label)
+        self.phone_label = QLabel(tr("register_phone"))
+        self.phone_label.setStyleSheet(self.get_label_style())
+        right_layout.addWidget(self.phone_label)
         
         self.phone_input = QLineEdit()
-        self.phone_input.setPlaceholderText("1234567890")
+        self.phone_input.setPlaceholderText(tr("register_phone_placeholder"))
         self.phone_input.setStyleSheet(self.get_input_style())
         self.phone_input.setMinimumHeight(30)
         right_layout.addWidget(self.phone_input)
         
         # Contraseña
-        password_label = QLabel("🔒 Contraseña")
-        password_label.setStyleSheet(self.get_label_style())
-        right_layout.addWidget(password_label)
+        self.password_label = QLabel(tr("register_password"))
+        self.password_label.setStyleSheet(self.get_label_style())
+        right_layout.addWidget(self.password_label)
         
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("")
@@ -490,19 +504,19 @@ class RegisterWidget(BasePage):
         buttons_layout.setSpacing(8)
         buttons_layout.setAlignment(Qt.AlignCenter)
         
-        next_btn = QPushButton("Siguiente ➡️")
-        next_btn.setStyleSheet(self.get_button_style())
-        next_btn.setMinimumWidth(120)
-        next_btn.setMinimumHeight(34)
-        next_btn.clicked.connect(self.on_register)
-        buttons_layout.addWidget(next_btn)
+        self.next_btn = QPushButton(tr("register_next"))
+        self.next_btn.setStyleSheet(self.get_button_style())
+        self.next_btn.setMinimumWidth(120)
+        self.next_btn.setMinimumHeight(34)
+        self.next_btn.clicked.connect(self.on_register)
+        buttons_layout.addWidget(self.next_btn)
         
-        back_btn = QPushButton("⬅️ Atrás")
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(34)
-        back_btn.clicked.connect(self.on_back)
-        buttons_layout.addWidget(back_btn)
+        self.back_btn = QPushButton(tr("register_back"))
+        self.back_btn.setStyleSheet(self.get_button_style())
+        self.back_btn.setMinimumWidth(120)
+        self.back_btn.setMinimumHeight(34)
+        self.back_btn.clicked.connect(self.on_back)
+        buttons_layout.addWidget(self.back_btn)
         
         right_layout.addLayout(buttons_layout)
         
@@ -515,6 +529,19 @@ class RegisterWidget(BasePage):
         
         self.setLayout(main_layout)
     
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.title.setText(tr("register_title"))
+        self.name_label.setText(tr("register_name"))
+        self.name_input.setPlaceholderText(tr("register_name_placeholder"))
+        self.email_label.setText(tr("register_email"))
+        self.email_input.setPlaceholderText(tr("register_email_placeholder"))
+        self.phone_label.setText(tr("register_phone"))
+        self.phone_input.setPlaceholderText(tr("register_phone_placeholder"))
+        self.password_label.setText(tr("register_password"))
+        self.next_btn.setText(tr("register_next"))
+        self.back_btn.setText(tr("register_back"))
+    
     def on_register(self):
         name = self.name_input.text().strip()
         email = self.email_input.text().strip()
@@ -523,23 +550,23 @@ class RegisterWidget(BasePage):
         
         # Validaciones
         if not all([name, email, phone, password]):
-            show_styled_message(self, "Error", "Por favor completa todos los campos", "warning")
+            show_styled_message(self, tr("error"), tr("register_error_empty"), "warning")
             return
         
         if not self.is_valid_email(email):
-            show_styled_message(self, "Error", "Por favor ingresa un email válido", "warning")
+            show_styled_message(self, tr("error"), tr("register_error_invalid_email"), "warning")
             return
         
         if not self.is_valid_phone(phone):
-            show_styled_message(self, "Error", "Por favor ingresa un teléfono válido (10+ dígitos)", "warning")
+            show_styled_message(self, tr("error"), tr("register_error_invalid_phone"), "warning")
             return
         
         if len(password) < 6 and password != "123":
-            show_styled_message(self, "Error", "La contraseña debe tener al menos 6 caracteres", "warning")
+            show_styled_message(self, tr("error"), tr("register_error_weak_password"), "warning")
             return
         
         if database.get_user(email):
-            show_styled_message(self, "Error", "Este email ya está registrado", "warning")
+            show_styled_message(self, tr("error"), tr("register_error_email_exists"), "warning")
             return
         
         # Detectar si el email es de dominio ranyave.com
@@ -548,12 +575,15 @@ class RegisterWidget(BasePage):
         
         # Registrar usuario
         if database.create_user(email, name, phone, password, role):
-            role_text = "administrador" if is_admin else "usuario"
-            show_styled_message(self, "Éxito", f"¡Bienvenido {name}!\nTu registro fue completado como {role_text}. Ahora puedes iniciar sesión.", "information")
+            if is_admin:
+                msg = tr("register_success_admin", name=name)
+            else:
+                msg = tr("register_success_user", name=name)
+            show_styled_message(self, tr("information"), msg, "information")
             self.clear_fields()
             self.parent_window.show_login()
         else:
-            show_styled_message(self, "Error", "Error al registrar usuario", "error")
+            show_styled_message(self, tr("error"), tr("register_error"), "error")
     
     def on_back(self):
         self.parent_window.show_login()
@@ -658,6 +688,10 @@ class AdminDashboard(BasePage):
         super().__init__(parent)
         self.user_name = user_name
         self.parent_window = parent
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
         self.init_ui()
     
     def init_ui(self):
@@ -668,19 +702,19 @@ class AdminDashboard(BasePage):
         
         # Header con rol
         header_layout = QHBoxLayout()
-        header_label = QLabel("ADMIN")
-        header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
+        self.header_label = QLabel(tr("admin_label"))
+        self.header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
         header_layout.addStretch()
-        header_layout.addWidget(header_label)
+        header_layout.addWidget(self.header_label)
         main_layout.addLayout(header_layout)
 
         # Título
-        title = QLabel("🛠️ GESTIÓN DE ADMINISTRADOR")
+        self.title = QLabel(tr("admin_title"))
         title_font = QFont("Segoe UI", 20, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(title)
+        self.title.setFont(title_font)
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.title)
 
         main_layout.addSpacing(12)
         
@@ -690,46 +724,56 @@ class AdminDashboard(BasePage):
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Botón NEW STAGES
-        new_stages_btn = QPushButton("NUEVOS ESCENARIOS 🏟️")
-        new_stages_btn.setStyleSheet(self.get_button_style())
-        new_stages_btn.setMinimumWidth(160)
-        new_stages_btn.clicked.connect(self.on_new_stages)
-        center_layout.addWidget(new_stages_btn, alignment=Qt.AlignCenter)
+        self.new_stages_btn = QPushButton(tr("admin_new_stages"))
+        self.new_stages_btn.setStyleSheet(self.get_button_style())
+        self.new_stages_btn.setMinimumWidth(160)
+        self.new_stages_btn.clicked.connect(self.on_new_stages)
+        center_layout.addWidget(self.new_stages_btn, alignment=Qt.AlignCenter)
         
         # Botón STAGES INFO
-        stages_info_btn = QPushButton("INFO ESCENARIOS ℹ️")
-        stages_info_btn.setStyleSheet(self.get_button_style())
-        stages_info_btn.setMinimumWidth(160)
-        stages_info_btn.clicked.connect(self.on_stages_info)
-        center_layout.addWidget(stages_info_btn, alignment=Qt.AlignCenter)
+        self.stages_info_btn = QPushButton(tr("admin_stages_info"))
+        self.stages_info_btn.setStyleSheet(self.get_button_style())
+        self.stages_info_btn.setMinimumWidth(160)
+        self.stages_info_btn.clicked.connect(self.on_stages_info)
+        center_layout.addWidget(self.stages_info_btn, alignment=Qt.AlignCenter)
         
         # Botón RESERVATIONS
-        reservations_btn = QPushButton("RESERVAS 📅")
-        reservations_btn.setStyleSheet(self.get_button_style())
-        reservations_btn.setMinimumWidth(160)
-        reservations_btn.clicked.connect(self.on_reservations)
-        center_layout.addWidget(reservations_btn, alignment=Qt.AlignCenter)
+        self.reservations_btn = QPushButton(tr("admin_reservations"))
+        self.reservations_btn.setStyleSheet(self.get_button_style())
+        self.reservations_btn.setMinimumWidth(160)
+        self.reservations_btn.clicked.connect(self.on_reservations)
+        center_layout.addWidget(self.reservations_btn, alignment=Qt.AlignCenter)
         
         # Botón Back to login
-        back_btn = QPushButton("⬅️ Volver al inicio")
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(160)
-        back_btn.clicked.connect(self.on_logout)
-        center_layout.addWidget(back_btn, alignment=Qt.AlignCenter)
+        self.back_btn = QPushButton(tr("admin_back"))
+        self.back_btn.setStyleSheet(self.get_button_style())
+        self.back_btn.setMinimumWidth(160)
+        self.back_btn.clicked.connect(self.on_logout)
+        center_layout.addWidget(self.back_btn, alignment=Qt.AlignCenter)
         
         main_layout.addLayout(center_layout)
         
         main_layout.addSpacing(12)
 
         # Información de usuario (compacta)
-        user_info = QLabel(f"Sesión: {self.user_name}")
-        user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 11px;")
-        user_info.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(user_info)
+        self.user_info = QLabel(tr("admin_session", name=self.user_name))
+        self.user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 11px;")
+        self.user_info.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.user_info)
 
         main_layout.addStretch()
         
         self.setLayout(main_layout)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.header_label.setText(tr("admin_label"))
+        self.title.setText(tr("admin_title"))
+        self.new_stages_btn.setText(tr("admin_new_stages"))
+        self.stages_info_btn.setText(tr("admin_stages_info"))
+        self.reservations_btn.setText(tr("admin_reservations"))
+        self.back_btn.setText(tr("admin_back"))
+        self.user_info.setText(tr("admin_session", name=self.user_name))
 
     
     def on_new_stages(self):
@@ -830,9 +874,13 @@ class VenueForm(BaseDialog):
     """Formulario para crear/editar escenarios"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("NEW SPORT STAGE")
+        self.setWindowTitle(tr("venue_title"))
         self.setMinimumWidth(600)
         self.setMinimumHeight(700)
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
         self.init_ui()
         
     def init_ui(self):
@@ -841,17 +889,17 @@ class VenueForm(BaseDialog):
         layout.setSpacing(12)
         
         # Title
-        title = QLabel("🏟️ NUEVO ESCENARIO DEPORTIVO")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title = QLabel(tr("venue_title"))
+        self.title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
         
         # Subtitle
-        subtitle = QLabel("📝 Complete todos los campos para crear un nuevo escenario deportivo")
-        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 11px;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle)
+        self.subtitle = QLabel(tr("venue_subtitle"))
+        self.subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 11px;")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.subtitle)
         
         layout.addSpacing(8)
         
@@ -871,64 +919,64 @@ class VenueForm(BaseDialog):
         form_layout.setHorizontalSpacing(12)
         
         # Name
-        name_label = QLabel("📋 Nombre del Escenario")
-        name_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.name_label = QLabel(tr("venue_name"))
+        self.name_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("e.g., Cancha de Fútbol A")
+        self.name_input.setPlaceholderText(tr("venue_name_placeholder"))
         self.name_input.setStyleSheet(self.get_input_style())
         self.name_input.setMinimumHeight(30)
-        form_layout.addRow(name_label, self.name_input)
+        form_layout.addRow(self.name_label, self.name_input)
         
         # Type
-        type_label = QLabel("⚽ Tipo")
-        type_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.type_label = QLabel(tr("venue_type"))
+        self.type_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.type_input = QComboBox()
         self.type_input.addItems(["Fútbol", "Baloncesto", "Tenis", "Voleibol", "Natación", "Otro"])
         self.type_input.setStyleSheet(self.get_input_style())
         self.type_input.setMinimumHeight(30)
-        form_layout.addRow(type_label, self.type_input)
+        form_layout.addRow(self.type_label, self.type_input)
         
         # Location
-        loc_label = QLabel("📍 Ubicación")
-        loc_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.loc_label = QLabel(tr("venue_location"))
+        self.loc_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.location_input = QLineEdit()
-        self.location_input.setPlaceholderText("e.g., Zona B, Edificio 3")
+        self.location_input.setPlaceholderText(tr("venue_location_placeholder"))
         self.location_input.setStyleSheet(self.get_input_style())
         self.location_input.setMinimumHeight(30)
-        form_layout.addRow(loc_label, self.location_input)
+        form_layout.addRow(self.loc_label, self.location_input)
         
         # Capacity
-        cap_label = QLabel("👥 Capacidad")
-        cap_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.cap_label = QLabel(tr("venue_capacity"))
+        self.cap_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.capacity_input = QSpinBox()
         self.capacity_input.setRange(1, 100000)
         self.capacity_input.setValue(50)
         self.capacity_input.setStyleSheet(self.get_input_style())
         self.capacity_input.setMinimumHeight(30)
-        form_layout.addRow(cap_label, self.capacity_input)
+        form_layout.addRow(self.cap_label, self.capacity_input)
         
         # Schedule - Date
-        sch_label = QLabel("📅 Fecha Programada")
-        sch_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.sch_label = QLabel(tr("venue_schedule_date"))
+        self.sch_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.schedule_date = QDateEdit()
         self.schedule_date.setCalendarPopup(True)
         self.schedule_date.setDate(QDate.currentDate())
         self.schedule_date.setStyleSheet(self.get_input_style())
         self.schedule_date.setMinimumHeight(30)
-        form_layout.addRow(sch_label, self.schedule_date)
+        form_layout.addRow(self.sch_label, self.schedule_date)
         
         # Schedule - Time
-        time_label = QLabel("🕐 Hora Programada")
-        time_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.time_label = QLabel(tr("venue_schedule_time"))
+        self.time_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.schedule_time = QTimeEdit()
         self.schedule_time.setTime(QTime(12, 0))
         self.schedule_time.setStyleSheet(self.get_input_style())
         self.schedule_time.setMinimumHeight(30)
-        form_layout.addRow(time_label, self.schedule_time)
+        form_layout.addRow(self.time_label, self.schedule_time)
         
         # Price
-        price_label = QLabel("💵 Precio ($)")
-        price_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
+        self.price_label = QLabel(tr("venue_price"))
+        self.price_label.setStyleSheet("color: white; font-size: 14px; font-family: Arial; font-weight: bold;")
         self.price_input = QDoubleSpinBox()
         self.price_input.setRange(0.0, 100000.0)
         self.price_input.setDecimals(2)
@@ -936,7 +984,7 @@ class VenueForm(BaseDialog):
         self.price_input.setValue(50.0)
         self.price_input.setStyleSheet(self.get_input_style())
         self.price_input.setMinimumHeight(30)
-        form_layout.addRow(price_label, self.price_input)
+        form_layout.addRow(self.price_label, self.price_input)
         
         layout.addLayout(form_layout)
         
@@ -956,16 +1004,16 @@ class VenueForm(BaseDialog):
         btn_layout.setSpacing(12)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("Cancelar ❌")
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(120)
-        back_btn.setMinimumHeight(34)
-        back_btn.setFont(QFont("Arial", 12, QFont.Bold))
-        back_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(back_btn)
+        self.back_btn = QPushButton(tr("venue_cancel"))
+        self.back_btn.setStyleSheet(self.get_button_style())
+        self.back_btn.setMinimumWidth(120)
+        self.back_btn.setMinimumHeight(34)
+        self.back_btn.setFont(QFont("Arial", 12, QFont.Bold))
+        self.back_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(self.back_btn)
         
-        save_btn = QPushButton("Guardar Escenario 💾")
-        save_btn.setStyleSheet("""
+        self.save_btn = QPushButton(tr("venue_save"))
+        self.save_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
                 border: 1px solid #45a049;
@@ -981,15 +1029,32 @@ class VenueForm(BaseDialog):
                 background-color: #45a049;
             }
         """)
-        save_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        save_btn.clicked.connect(self.save_venue)
-        btn_layout.addWidget(save_btn)
+        self.save_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        self.save_btn.clicked.connect(self.save_venue)
+        btn_layout.addWidget(self.save_btn)
         
         layout.addLayout(btn_layout)
         
         layout.addStretch()
         
         self.setLayout(layout)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.setWindowTitle(tr("venue_title"))
+        self.title.setText(tr("venue_title"))
+        self.subtitle.setText(tr("venue_subtitle"))
+        self.name_label.setText(tr("venue_name"))
+        self.name_input.setPlaceholderText(tr("venue_name_placeholder"))
+        self.type_label.setText(tr("venue_type"))
+        self.loc_label.setText(tr("venue_location"))
+        self.location_input.setPlaceholderText(tr("venue_location_placeholder"))
+        self.cap_label.setText(tr("venue_capacity"))
+        self.sch_label.setText(tr("venue_schedule_date"))
+        self.time_label.setText(tr("venue_schedule_time"))
+        self.price_label.setText(tr("venue_price"))
+        self.back_btn.setText(tr("venue_cancel"))
+        self.save_btn.setText(tr("venue_save"))
         
     def save_venue(self):
         name = self.name_input.text().strip()
@@ -1004,7 +1069,7 @@ class VenueForm(BaseDialog):
         schedule = f"{date_str} {time_str}"
         
         if not name or not location:
-            QMessageBox.warning(self, "Error", "Por favor completa todos los campos")
+            show_styled_message(self, tr("error"), "Por favor completa todos los campos", "warning")
             return
             
         venue_id = str(uuid.uuid4())
@@ -1032,8 +1097,12 @@ class VenuesListDialog(BaseDialog):
     """Diálogo para ver lista de escenarios"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("INFO SPORT STAGE")
+        self.setWindowTitle(tr("admin_stages_info"))
         self.setMinimumSize(1400, 700)
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
         self.init_ui()
         
     def init_ui(self):
@@ -1045,17 +1114,17 @@ class VenuesListDialog(BaseDialog):
         left_layout = QVBoxLayout()
         left_layout.setSpacing(15)
         
-        title = QLabel("📋 TODOS LOS ESCENARIOS")
-        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(title)
+        self.title = QLabel(tr("venues_list_title"))
+        self.title.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(self.title)
         
         # Subtitle
-        subtitle = QLabel("Haga clic en un escenario para editar o eliminar")
-        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 10px;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(subtitle)
+        self.subtitle = QLabel(tr("venues_list_subtitle"))
+        self.subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 10px;")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(self.subtitle)
         
         # Separator
         separator1 = QFrame()
@@ -1066,7 +1135,7 @@ class VenuesListDialog(BaseDialog):
         
         self.table = QTableWidget()
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["Id", "Nombre", "Tipo", "Ubicación", "Capacidad", "Horario", "Precio"])
+        self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         
         # Mejorar el styling de la tabla
@@ -1137,12 +1206,11 @@ class VenuesListDialog(BaseDialog):
         form_frame_layout.setContentsMargins(12, 12, 12, 12)
         form_frame_layout.setSpacing(10)
         
-        edit_title = QLabel("✏️ EDITAR INFO ESCENARIO")
-        edit_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        edit_title.setStyleSheet("color: white;")
-        edit_title.setStyleSheet("color: white;")
-        edit_title.setAlignment(Qt.AlignCenter)
-        form_frame_layout.addWidget(edit_title)
+        self.edit_title = QLabel(tr("venues_list_edit_title"))
+        self.edit_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        self.edit_title.setStyleSheet("color: white;")
+        self.edit_title.setAlignment(Qt.AlignCenter)
+        form_frame_layout.addWidget(self.edit_title)
         
         # Separator
         separator2 = QFrame()
@@ -1156,64 +1224,64 @@ class VenuesListDialog(BaseDialog):
         form_layout.setHorizontalSpacing(12)
         
         # Name
+        self.name_label = QLabel(tr("venues_list_name"))
+        self.name_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_name = QLineEdit()
         self.edit_name.setStyleSheet(self.get_input_style())
         self.edit_name.setMinimumHeight(28)
-        name_label = QLabel("📋 Nombre del Escenario")
-        name_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(name_label, self.edit_name)
+        form_layout.addRow(self.name_label, self.edit_name)
         
         # Type
+        self.type_label = QLabel(tr("venues_list_type"))
+        self.type_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_type = QLineEdit()
         self.edit_type.setStyleSheet(self.get_input_style())
         self.edit_type.setMinimumHeight(28)
-        type_label = QLabel("⚽ Tipo")
-        type_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(type_label, self.edit_type)
+        form_layout.addRow(self.type_label, self.edit_type)
         
         # Location
+        self.location_label = QLabel(tr("venues_list_location"))
+        self.location_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_location = QLineEdit()
         self.edit_location.setStyleSheet(self.get_input_style())
         self.edit_location.setMinimumHeight(28)
-        location_label = QLabel("📍 Ubicación")
-        location_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(location_label, self.edit_location)
+        form_layout.addRow(self.location_label, self.edit_location)
         
         # Capacity
+        self.capacity_label = QLabel(tr("venues_list_capacity"))
+        self.capacity_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_capacity = QLineEdit()
         self.edit_capacity.setStyleSheet(self.get_input_style())
         self.edit_capacity.setMinimumHeight(28)
-        capacity_label = QLabel("👥 Capacidad")
-        capacity_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(capacity_label, self.edit_capacity)
+        form_layout.addRow(self.capacity_label, self.edit_capacity)
         
         # Schedule Date
+        self.date_label = QLabel(tr("venues_list_date"))
+        self.date_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_schedule_date = QDateEdit()
         self.edit_schedule_date.setCalendarPopup(True)
         self.edit_schedule_date.setStyleSheet(self.get_input_style())
         self.edit_schedule_date.setMinimumHeight(28)
-        date_label = QLabel("📅 Fecha Programada")
-        date_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(date_label, self.edit_schedule_date)
+        form_layout.addRow(self.date_label, self.edit_schedule_date)
         
         # Schedule Time
+        self.time_label = QLabel(tr("venues_list_time"))
+        self.time_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_schedule_time = QTimeEdit()
         self.edit_schedule_time.setStyleSheet(self.get_input_style())
         self.edit_schedule_time.setMinimumHeight(28)
-        time_label = QLabel("🕐 Hora Programada")
-        time_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(time_label, self.edit_schedule_time)
+        form_layout.addRow(self.time_label, self.edit_schedule_time)
         
         # Price
+        self.price_label = QLabel(tr("venues_list_price"))
+        self.price_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
         self.edit_price = QDoubleSpinBox()
         self.edit_price.setRange(0.0, 100000.0)
         self.edit_price.setDecimals(2)
         self.edit_price.setSingleStep(10.0)
         self.edit_price.setStyleSheet(self.get_input_style())
         self.edit_price.setMinimumHeight(28)
-        price_label = QLabel("💵 Precio ($)")
-        price_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        form_layout.addRow(price_label, self.edit_price)
+        form_layout.addRow(self.price_label, self.edit_price)
         
         right_layout.addLayout(form_layout)
         
@@ -1224,15 +1292,15 @@ class VenuesListDialog(BaseDialog):
         btn_layout.setSpacing(10)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("Cancelar ❌")
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(110)
-        back_btn.setMinimumHeight(32)
-        back_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(back_btn)
+        self.back_btn = QPushButton(tr("venues_list_back"))
+        self.back_btn.setStyleSheet(self.get_button_style())
+        self.back_btn.setMinimumWidth(110)
+        self.back_btn.setMinimumHeight(32)
+        self.back_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(self.back_btn)
         
-        save_btn = QPushButton("Guardar Cambios 💾")
-        save_btn.setStyleSheet("""
+        self.save_btn = QPushButton(tr("venues_list_save"))
+        self.save_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
                 border: 1px solid #45a049;
@@ -1248,11 +1316,11 @@ class VenuesListDialog(BaseDialog):
                 background-color: #45a049;
             }
         """)
-        save_btn.clicked.connect(self.save_changes)
-        btn_layout.addWidget(save_btn)
+        self.save_btn.clicked.connect(self.save_changes)
+        btn_layout.addWidget(self.save_btn)
         
-        delete_btn = QPushButton("Eliminar 🗑️")
-        delete_btn.setStyleSheet("""
+        self.delete_btn = QPushButton(tr("venues_list_delete"))
+        self.delete_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f44336;
                 border: 1px solid #d32f2f;
@@ -1268,8 +1336,8 @@ class VenuesListDialog(BaseDialog):
                 background-color: #d32f2f;
             }
         """)
-        delete_btn.clicked.connect(self.delete_venue)
-        btn_layout.addWidget(delete_btn)
+        self.delete_btn.clicked.connect(self.delete_venue)
+        btn_layout.addWidget(self.delete_btn)
         
         right_layout.addLayout(btn_layout)
         
@@ -1281,6 +1349,29 @@ class VenuesListDialog(BaseDialog):
         self.setLayout(layout)
         
         self.current_venue_id = None
+    
+    def update_table_headers(self):
+        """Actualiza los encabezados de la tabla con el idioma actual"""
+        headers = tr("venues_list_table").split("|")
+        self.table.setHorizontalHeaderLabels(headers)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.setWindowTitle(tr("admin_stages_info"))
+        self.title.setText(tr("venues_list_title"))
+        self.subtitle.setText(tr("venues_list_subtitle"))
+        self.update_table_headers()
+        self.edit_title.setText(tr("venues_list_edit_title"))
+        self.name_label.setText(tr("venues_list_name"))
+        self.type_label.setText(tr("venues_list_type"))
+        self.location_label.setText(tr("venues_list_location"))
+        self.capacity_label.setText(tr("venues_list_capacity"))
+        self.date_label.setText(tr("venues_list_date"))
+        self.time_label.setText(tr("venues_list_time"))
+        self.price_label.setText(tr("venues_list_price"))
+        self.back_btn.setText(tr("venues_list_back"))
+        self.save_btn.setText(tr("venues_list_save"))
+        self.delete_btn.setText(tr("venues_list_delete"))
         
     def load_data(self):
         self.venues = database.get_all_venues()
@@ -1360,16 +1451,16 @@ class VenuesListDialog(BaseDialog):
         try:
             database.save_venue(self.venues[self.current_venue_id])
             self.load_data()
-            QMessageBox.information(self, "Éxito", "¡Cambios guardados!")
+            show_styled_message(self, tr("information"), tr("venues_list_save_success"), "information")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error guardando cambios: {str(e)}")
+            show_styled_message(self, tr("error"), f"Error guardando cambios: {str(e)}", "warning")
             print(f"Error details: {e}")
             import traceback
             traceback.print_exc()
     
     def delete_venue(self):
         if not self.current_venue_id:
-            QMessageBox.warning(self, "Advertencia", "Por favor selecciona un escenario para eliminar")
+            show_styled_message(self, tr("warning"), "Por favor selecciona un escenario para eliminar", "warning")
             return
         
         venue_name = self.venues[self.current_venue_id]["name"]
@@ -1377,8 +1468,8 @@ class VenuesListDialog(BaseDialog):
         # Confirmar eliminación
         reply = QMessageBox.question(
             self, 
-            'Confirmar Eliminación', 
-            f'¿Estás seguro de que deseas eliminar "{venue_name}"?\n\nEsta acción no se puede deshacer.',
+            tr("venues_list_delete_confirm_title"), 
+            tr("venues_list_delete_confirm"),
             QMessageBox.Yes | QMessageBox.No, 
             QMessageBox.No
         )
@@ -1387,7 +1478,7 @@ class VenuesListDialog(BaseDialog):
             try:
                 database.delete_venue(self.current_venue_id)
                 self.load_data()
-                QMessageBox.information(self, "Éxito", f"¡El escenario '{venue_name}' ha sido eliminado!")
+                show_styled_message(self, tr("information"), tr("venues_list_delete_success"), "information")
                 self.current_venue_id = None
                 # Limpiar los campos del formulario
                 self.edit_name.clear()
@@ -1396,7 +1487,7 @@ class VenuesListDialog(BaseDialog):
                 self.edit_capacity.clear()
                 self.edit_price.setValue(0.0)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Error eliminando escenario: {str(e)}")
+                show_styled_message(self, tr("error"), f"Error eliminando escenario: {str(e)}", "warning")
                 print(f"Error details: {e}")
                 import traceback
                 traceback.print_exc()
@@ -1408,6 +1499,10 @@ class UserDashboard(BasePage):
         super().__init__(parent)
         self.user_name = user_name
         self.parent_window = parent
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
         self.init_ui()
     
     def init_ui(self):
@@ -1417,19 +1512,19 @@ class UserDashboard(BasePage):
         
         # Header con rol
         header_layout = QHBoxLayout()
-        header_label = QLabel("USER")
-        header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
+        self.header_label = QLabel(tr("user_label"))
+        self.header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
         header_layout.addStretch()
-        header_layout.addWidget(header_label)
+        header_layout.addWidget(self.header_label)
         layout.addLayout(header_layout)
 
         # Título
-        title = QLabel("👤 GESTIÓN DE USUARIO")
+        self.title = QLabel(tr("user_title"))
         title_font = QFont("Segoe UI", 20, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title.setFont(title_font)
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
 
         layout.addSpacing(12)
         
@@ -1439,18 +1534,18 @@ class UserDashboard(BasePage):
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Botón RESERVE
-        reserve_btn = QPushButton("RESERVAR 📅")
-        reserve_btn.setStyleSheet(self.get_button_style())
-        reserve_btn.setMinimumWidth(140)
-        reserve_btn.clicked.connect(self.on_reserve)
-        center_layout.addWidget(reserve_btn)
+        self.reserve_btn = QPushButton(tr("user_reserve"))
+        self.reserve_btn.setStyleSheet(self.get_button_style())
+        self.reserve_btn.setMinimumWidth(140)
+        self.reserve_btn.clicked.connect(self.on_reserve)
+        center_layout.addWidget(self.reserve_btn)
         
         # Botón RESERVATIONS
-        reservations_btn = QPushButton("MIS RESERVAS 📋")
-        reservations_btn.setStyleSheet(self.get_button_style())
-        reservations_btn.setMinimumWidth(140)
-        reservations_btn.clicked.connect(self.on_my_reservations)
-        center_layout.addWidget(reservations_btn)
+        self.reservations_btn = QPushButton(tr("user_my_reservations"))
+        self.reservations_btn.setStyleSheet(self.get_button_style())
+        self.reservations_btn.setMinimumWidth(140)
+        self.reservations_btn.clicked.connect(self.on_my_reservations)
+        center_layout.addWidget(self.reservations_btn)
         
         layout.addLayout(center_layout)
         
@@ -1459,11 +1554,11 @@ class UserDashboard(BasePage):
         history_layout.setSpacing(16)
         history_layout.setAlignment(Qt.AlignCenter)
         
-        history_btn = QPushButton("HISTORIAL 📜")
-        history_btn.setStyleSheet(self.get_button_style())
-        history_btn.setMinimumWidth(140)
-        history_btn.clicked.connect(self.on_history)
-        history_layout.addWidget(history_btn)
+        self.history_btn = QPushButton(tr("user_history"))
+        self.history_btn.setStyleSheet(self.get_button_style())
+        self.history_btn.setMinimumWidth(140)
+        self.history_btn.clicked.connect(self.on_history)
+        history_layout.addWidget(self.history_btn)
         
         layout.addLayout(history_layout)
         
@@ -1472,16 +1567,25 @@ class UserDashboard(BasePage):
         # Botón Back to login (compacto)
         bottom_layout = QHBoxLayout()
         bottom_layout.setAlignment(Qt.AlignCenter)
-        logout_btn = QPushButton("⬅️ Volver al inicio")
-        logout_btn.setStyleSheet(self.get_button_style())
-        logout_btn.setMinimumWidth(140)
-        logout_btn.setMaximumHeight(34)
-        logout_btn.clicked.connect(self.on_logout)
-        bottom_layout.addWidget(logout_btn)
+        self.logout_btn = QPushButton(tr("user_back"))
+        self.logout_btn.setStyleSheet(self.get_button_style())
+        self.logout_btn.setMinimumWidth(140)
+        self.logout_btn.setMaximumHeight(34)
+        self.logout_btn.clicked.connect(self.on_logout)
+        bottom_layout.addWidget(self.logout_btn)
         layout.addLayout(bottom_layout)
         layout.addStretch()
         
         self.setLayout(layout)
+
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.header_label.setText(tr("user_label"))
+        self.title.setText(tr("user_title"))
+        self.reserve_btn.setText(tr("user_reserve"))
+        self.reservations_btn.setText(tr("user_my_reservations"))
+        self.history_btn.setText(tr("user_history"))
+        self.logout_btn.setText(tr("user_back"))
 
     
     def on_reserve(self):
@@ -1508,35 +1612,39 @@ class ReservationDialog(BaseDialog):
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
-        self.setWindowTitle("RESERVAR")
+        self.setWindowTitle(tr("user_reserve"))
         self.setMinimumSize(1000, 600)
-        self.init_ui()
         
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
+        self.init_ui()
+    
     def init_ui(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
         
-        title = QLabel("📅 RESERVAR ESCENARIO DEPORTIVO")
-        title.setFont(QFont("Arial", 24, QFont.Bold))
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title = QLabel(tr("reservation_title"))
+        self.title.setFont(QFont("Arial", 24, QFont.Bold))
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
         
         layout.addSpacing(20)
         
         # Subtítulo informativo
-        subtitle = QLabel("Selecciona un escenario disponible de la tabla y haz clic en 'Reservar'")
-        subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 12px;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle)
+        self.subtitle = QLabel(tr("reservation_subtitle"))
+        self.subtitle.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 12px;")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.subtitle)
         
         layout.addSpacing(10)
         
         # Tabla de escenarios disponibles
         self.table = QTableWidget()
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["Nombre", "Tipo", "Ubicación", "Capacidad", "Fecha", "Hora", "Precio"])
+        self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setStyleSheet("""
             QTableWidget {
@@ -1563,17 +1671,17 @@ class ReservationDialog(BaseDialog):
         btn_layout.setSpacing(20)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        back_btn = QPushButton("⬅️ Volver")
-        back_btn.setStyleSheet(self.get_button_style())
-        back_btn.setMinimumWidth(150)
-        back_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(back_btn)
+        self.back_btn = QPushButton(tr("reservation_back"))
+        self.back_btn.setStyleSheet(self.get_button_style())
+        self.back_btn.setMinimumWidth(150)
+        self.back_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(self.back_btn)
         
-        reserve_btn = QPushButton("Reservar ✅")
-        reserve_btn.setStyleSheet(self.get_button_style())
-        reserve_btn.setMinimumWidth(150)
-        reserve_btn.clicked.connect(self.make_reservation)
-        btn_layout.addWidget(reserve_btn)
+        self.reserve_btn = QPushButton(tr("reservation_reserve_btn"))
+        self.reserve_btn.setStyleSheet(self.get_button_style())
+        self.reserve_btn.setMinimumWidth(150)
+        self.reserve_btn.clicked.connect(self.make_reservation)
+        btn_layout.addWidget(self.reserve_btn)
         
         layout.addLayout(btn_layout)
         
@@ -1581,7 +1689,21 @@ class ReservationDialog(BaseDialog):
         
         # Cargar los escenarios disponibles en la tabla
         self.load_available_venues()
-        
+    
+    def update_table_headers(self):
+        """Actualiza los encabezados de la tabla con el idioma actual"""
+        headers = tr("reservation_table_headers").split("|")
+        self.table.setHorizontalHeaderLabels(headers)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.setWindowTitle(tr("user_reserve"))
+        self.title.setText(tr("reservation_title"))
+        self.subtitle.setText(tr("reservation_subtitle"))
+        self.update_table_headers()
+        self.back_btn.setText(tr("reservation_back"))
+        self.reserve_btn.setText(tr("reservation_reserve_btn"))
+    
     def load_available_venues(self):
         """Carga los escenarios activos y no reservados en la tabla"""
         venues = database.get_all_venues()
@@ -1612,7 +1734,7 @@ class ReservationDialog(BaseDialog):
         
         if not available_venues:
             self.table.setRowCount(1)
-            no_venues_item = QTableWidgetItem("No hay escenarios disponibles")
+            no_venues_item = QTableWidgetItem(tr("reservation_error_no_venues"))
             no_venues_item.setForeground(QColor(200, 0, 0))
             self.table.setItem(0, 0, no_venues_item)
             return
@@ -1671,7 +1793,7 @@ class ReservationDialog(BaseDialog):
         current_row = self.table.currentRow()
         
         if current_row < 0 or current_row >= len(self.venues_list):
-            QMessageBox.warning(self, "Error", "Por favor selecciona un escenario para reservar")
+            show_styled_message(self, tr("error"), tr("reservation_error_select"), "warning")
             return
         
         venue_id = self.venues_list[current_row]
@@ -1680,7 +1802,7 @@ class ReservationDialog(BaseDialog):
         # Extraer fecha y hora del schedule
         schedule = venue.get("schedule", "")
         if not schedule or " " not in schedule:
-            QMessageBox.warning(self, "Error", "Formato de horario inválido")
+            show_styled_message(self, tr("error"), tr("reservation_error_invalid_schedule"), "warning")
             return
         
         date_str, time_str = schedule.split(" ", 1)
@@ -1689,7 +1811,7 @@ class ReservationDialog(BaseDialog):
         reservations = database.get_all_reservations()
         for r in reservations.values():
             if r["venue_id"] == venue_id and r["date"] == date_str and r["time"] == time_str and r["status"] == "confirmed":
-                QMessageBox.warning(self, "Error", "Este escenario ya está reservado para esta fecha y hora")
+                show_styled_message(self, tr("error"), tr("reservation_error_already_reserved"), "warning")
                 return
         
         # Procesar pago antes de confirmar la reserva
@@ -1702,7 +1824,7 @@ class ReservationDialog(BaseDialog):
             return
         
         if not payment_dialog.payment_successful:
-            QMessageBox.warning(self, "Error", "El pago no fue procesado")
+            show_styled_message(self, tr("error"), tr("reservation_payment_error"), "warning")
             return
         
         # Crear reserva después de pago exitoso
@@ -1718,7 +1840,12 @@ class ReservationDialog(BaseDialog):
         }
         
         database.save_reservation(res_data)
-        QMessageBox.information(self, "Éxito", f"¡Reserva confirmada!\n\nEscenario: {venue_name}\nFecha: {date_str}\nHora: {time_str}\nMonto pagado: ${price:.2f}")
+        show_styled_message(
+            self,
+            tr("reservation_success_title"),
+            tr("reservation_success", venue_name=venue_name, date=date_str, time=time_str, price=f"{price:.2f}"),
+            "information"
+        )
         self.accept()
 
 
@@ -1869,24 +1996,28 @@ class MyReservationsDialog(BaseDialog):
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
-        self.setWindowTitle("RESERVAS")
+        self.setWindowTitle(tr("user_my_reservations"))
         self.setMinimumSize(800, 500)
-        self.init_ui()
         
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
+        self.init_ui()
+    
     def init_ui(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        title = QLabel("📋 MIS RESERVAS")
-        title.setFont(QFont("Arial", 20, QFont.Bold))
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title = QLabel(tr("my_reservations_title"))
+        self.title.setFont(QFont("Arial", 20, QFont.Bold))
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
         
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Escenario", "Fecha", "Hora", "Estado", "Acción"])
+        self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setStyleSheet("""
             QTableWidget {
@@ -1903,13 +2034,26 @@ class MyReservationsDialog(BaseDialog):
         """)
         layout.addWidget(self.table)
         
-        close_btn = QPushButton("Volver")
-        close_btn.setStyleSheet(self.get_button_style())
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn, alignment=Qt.AlignCenter)
+        self.close_btn = QPushButton(tr("my_reservations_back"))
+        self.close_btn.setStyleSheet(self.get_button_style())
+        self.close_btn.clicked.connect(self.accept)
+        layout.addWidget(self.close_btn, alignment=Qt.AlignCenter)
         
         self.load_data()
         self.setLayout(layout)
+    
+    def update_table_headers(self):
+        """Actualiza los encabezados de la tabla con el idioma actual"""
+        headers = tr("my_reservations_table_headers").split("|")
+        self.table.setHorizontalHeaderLabels(headers)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.setWindowTitle(tr("user_my_reservations"))
+        self.title.setText(tr("my_reservations_title"))
+        self.update_table_headers()
+        self.close_btn.setText(tr("my_reservations_back"))
+        self.load_data()
         
     def load_data(self):
         reservations = database.get_all_reservations()
@@ -1924,31 +2068,36 @@ class MyReservationsDialog(BaseDialog):
             self.table.setItem(i, 3, QTableWidgetItem(res["status"]))
             
             if res["status"] == "cancelled":
-                status_label = QLabel("Cancelado")
+                status_label = QLabel(tr("my_reservations_cancelled"))
                 status_label.setAlignment(Qt.AlignCenter)
                 status_label.setStyleSheet("color: gray; font-weight: bold;")
                 self.table.setCellWidget(i, 4, status_label)
             else:
-                cancel_btn = QPushButton("Cancelar")
+                cancel_btn = QPushButton(tr("my_reservations_cancel"))
                 cancel_btn.setStyleSheet("background-color: #ff4444; color: white; border-radius: 5px; padding: 5px;")
                 cancel_btn.clicked.connect(lambda checked, r=rid: self.cancel_reservation(r))
                 self.table.setCellWidget(i, 4, cancel_btn)
             
     def cancel_reservation(self, res_id):
-        reply = QMessageBox.question(self, 'Confirmar', 
-                                   '¿Estás seguro de que deseas cancelar esta reserva?',
+        reply = QMessageBox.question(self, tr("my_reservations_confirm_title"), 
+                                   tr("my_reservations_confirm"),
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         
         if reply == QMessageBox.Yes:
             database.update_reservation_status(res_id, 'cancelled')
             self.load_data()
 
+
 class AdminReservationsDialog(BaseDialog):
     """Diálogo para que el admin vea todas las reservas y su estado"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("RESERVAS ADMIN")
+        self.setWindowTitle(tr("admin_reservations"))
         self.setMinimumSize(1000, 600)
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
+        
         self.init_ui()
         
     def init_ui(self):
@@ -1956,15 +2105,15 @@ class AdminReservationsDialog(BaseDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        title = QLabel("TODAS LAS RESERVAS")
-        title.setFont(QFont("Arial", 20, QFont.Bold))
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title = QLabel(tr("admin_reservations_title"))
+        self.title.setFont(QFont("Arial", 20, QFont.Bold))
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
         
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["Usuario", "Escenario", "Fecha", "Hora", "Estado", "Reservado"])
+        self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setStyleSheet("""
             QTableWidget {
@@ -1986,25 +2135,39 @@ class AdminReservationsDialog(BaseDialog):
         btn_layout.setSpacing(20)
         btn_layout.setAlignment(Qt.AlignCenter)
         
-        cancel_btn = QPushButton("Cancelar")
-        cancel_btn.setStyleSheet(self.get_button_style())
-        cancel_btn.clicked.connect(self.cancel_reservation)
-        btn_layout.addWidget(cancel_btn)
+        self.cancel_btn = QPushButton(tr("admin_reservations_cancel_btn"))
+        self.cancel_btn.setStyleSheet(self.get_button_style())
+        self.cancel_btn.clicked.connect(self.cancel_reservation)
+        btn_layout.addWidget(self.cancel_btn)
         
-        refresh_btn = QPushButton("Actualizar")
-        refresh_btn.setStyleSheet(self.get_button_style())
-        refresh_btn.clicked.connect(self.load_data)
-        btn_layout.addWidget(refresh_btn)
+        self.refresh_btn = QPushButton("Actualizar")
+        self.refresh_btn.setStyleSheet(self.get_button_style())
+        self.refresh_btn.clicked.connect(self.load_data)
+        btn_layout.addWidget(self.refresh_btn)
         
-        close_btn = QPushButton("Volver")
-        close_btn.setStyleSheet(self.get_button_style())
-        close_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(close_btn)
+        self.close_btn = QPushButton(tr("admin_reservations_back_btn"))
+        self.close_btn.setStyleSheet(self.get_button_style())
+        self.close_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(self.close_btn)
         
         layout.addLayout(btn_layout)
         
         self.load_data()
         self.setLayout(layout)
+    
+    def update_table_headers(self):
+        """Actualiza los encabezados de la tabla con el idioma actual"""
+        headers = tr("admin_reservations_table").split("|")
+        self.table.setHorizontalHeaderLabels(headers)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        self.setWindowTitle(tr("admin_reservations"))
+        self.title.setText(tr("admin_reservations_title"))
+        self.update_table_headers()
+        self.cancel_btn.setText(tr("admin_reservations_cancel_btn"))
+        self.close_btn.setText(tr("admin_reservations_back_btn"))
+        self.load_data()
         
     def load_data(self):
         reservations = database.get_all_reservations()
@@ -2052,6 +2215,9 @@ class WelcomeWidget(BasePage):
         super().__init__(parent)
         self.parent_window = parent
         self.init_ui()
+        
+        # Conectar a cambios de idioma
+        get_language_manager().language_changed.connect(self.update_ui)
     
     def init_ui(self):
         layout = QVBoxLayout()
@@ -2060,39 +2226,50 @@ class WelcomeWidget(BasePage):
         layout.setAlignment(Qt.AlignCenter)
         
         # Título
-        title = QLabel("SGED RANYAVE")
+        self.title = QLabel("SGED RANYAVE")
         title_font = QFont("Arial", 36, QFont.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: white;")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        self.title.setFont(title_font)
+        self.title.setStyleSheet("color: white;")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
         
         # Subtítulo
-        subtitle = QLabel("¡Bienvenido a Ranyave!")
+        self.subtitle = QLabel("¡Bienvenido a Ranyave!")
         subtitle_font = QFont("Arial", 16)
-        subtitle.setFont(subtitle_font)
-        subtitle.setStyleSheet("color: white;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle)
+        self.subtitle.setFont(subtitle_font)
+        self.subtitle.setStyleSheet("color: white;")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.subtitle)
         
         layout.addSpacing(40)
         
         # Botones
-        login_btn = QPushButton("Iniciar Sesión")
-        login_btn.setStyleSheet(self.get_button_style())
-        login_btn.setMinimumWidth(250)
-        login_btn.clicked.connect(self.parent_window.show_login)
-        layout.addWidget(login_btn, alignment=Qt.AlignCenter)
+        self.login_btn = QPushButton("Iniciar Sesión")
+        self.login_btn.setStyleSheet(self.get_button_style())
+        self.login_btn.setMinimumWidth(250)
+        self.login_btn.clicked.connect(self.parent_window.show_login)
+        layout.addWidget(self.login_btn, alignment=Qt.AlignCenter)
         
-        register_btn = QPushButton("Registrarse")
-        register_btn.setStyleSheet(self.get_button_style())
-        register_btn.setMinimumWidth(250)
-        register_btn.clicked.connect(self.parent_window.show_register)
-        layout.addWidget(register_btn, alignment=Qt.AlignCenter)
+        self.register_btn = QPushButton("Registrarse")
+        self.register_btn.setStyleSheet(self.get_button_style())
+        self.register_btn.setMinimumWidth(250)
+        self.register_btn.clicked.connect(self.parent_window.show_register)
+        layout.addWidget(self.register_btn, alignment=Qt.AlignCenter)
         
         layout.addStretch()
         
         self.setLayout(layout)
+    
+    def update_ui(self):
+        """Actualiza los textos cuando cambia el idioma"""
+        if get_language_manager().get_current_language() == "es":
+            self.subtitle.setText("¡Bienvenido a Ranyave!")
+            self.login_btn.setText("Iniciar Sesión")
+            self.register_btn.setText("Registrarse")
+        else:
+            self.subtitle.setText("Welcome to Ranyave!")
+            self.login_btn.setText("Sign In")
+            self.register_btn.setText("Register")
 
 
 
@@ -2103,9 +2280,68 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SGED RANYAVE")
         self.setGeometry(100, 100, 1200, 700)
         
+        # Obtener gestor de idiomas
+        self.language_manager = get_language_manager()
+        self.language_manager.language_changed.connect(self.on_language_changed)
+        
         # Stack de widgets
         self.stacked_widget = QStackedWidget()
-        self.setCentralWidget(self.stacked_widget)
+        
+        # Crear widget central con layout para botón de idioma
+        central_widget = QWidget()
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Barra superior con botón de idioma
+        top_bar = QWidget()
+        top_bar.setStyleSheet("background-color: #1a2a4a; border-bottom: 1px solid #4a7ba7;")
+        top_bar_layout = QHBoxLayout()
+        top_bar_layout.setContentsMargins(10, 8, 10, 8)
+        top_bar_layout.setSpacing(10)
+        
+        # Título de la aplicación
+        app_title = QLabel("SGED RANYAVE")
+        app_title.setStyleSheet("color: white; font-size: 14px; font-weight: bold;")
+        top_bar_layout.addWidget(app_title)
+        
+        top_bar_layout.addStretch()
+        
+        # Botón para cambiar idioma
+        lang_label = QLabel("🌐 " + tr("spanish"))
+        lang_label.setStyleSheet("color: white; font-size: 11px;")
+        top_bar_layout.addWidget(lang_label)
+        
+        lang_combo = QComboBox()
+        lang_combo.addItems([tr("spanish"), tr("english")])
+        lang_combo.setCurrentIndex(0)  # Español por defecto
+        lang_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #1e3a5f;
+                color: white;
+                border: 1px solid white;
+                border-radius: 3px;
+                padding: 4px;
+                font-size: 11px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1e3a5f;
+                color: white;
+                selection-background-color: #4a90e2;
+            }
+        """)
+        lang_combo.currentIndexChanged.connect(self.on_language_combo_changed)
+        top_bar_layout.addWidget(lang_combo)
+        self.lang_combo = lang_combo
+        self.lang_label = lang_label
+        
+        top_bar.setLayout(top_bar_layout)
+        main_layout.addWidget(top_bar)
+        
+        # Stack principal
+        main_layout.addWidget(self.stacked_widget, 1)
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
         
         # Crear pantallas
         self.welcome_widget = WelcomeWidget(self)
@@ -2121,15 +2357,47 @@ class MainWindow(QMainWindow):
         
         self.setStyleSheet("background-color: #1e3a5f;")
     
+    def on_language_combo_changed(self, index):
+        """Cambia el idioma cuando se selecciona en el combobox"""
+        if index == 0:  # Español
+            self.language_manager.set_language("es")
+        else:  # Inglés
+            self.language_manager.set_language("en")
+    
+    def on_language_changed(self, language_code):
+        """Se ejecuta cuando cambia el idioma"""
+        # Actualizar label
+        if language_code == "es":
+            self.lang_label.setText("🌐 " + tr("spanish"))
+            self.lang_combo.blockSignals(True)
+            self.lang_combo.setCurrentIndex(0)
+            self.lang_combo.blockSignals(False)
+        else:
+            self.lang_label.setText("🌐 " + tr("english"))
+            self.lang_combo.blockSignals(True)
+            self.lang_combo.setCurrentIndex(1)
+            self.lang_combo.blockSignals(False)
+        
+        # Actualizar todas las pantallas visibles
+        self.update_all_widgets()
+    
+    def update_all_widgets(self):
+        """Actualiza todos los widgets con el nuevo idioma"""
+        self.welcome_widget.update_ui()
+        self.login_widget.update_ui()
+        self.register_widget.update_ui()
+    
     def show_welcome(self):
         self.stacked_widget.setCurrentWidget(self.welcome_widget)
     
     def show_login(self):
         self.login_widget.clear_fields()
+        self.login_widget.update_ui()
         self.stacked_widget.setCurrentWidget(self.login_widget)
     
     def show_register(self):
         self.register_widget.clear_fields()
+        self.register_widget.update_ui()
         self.stacked_widget.setCurrentWidget(self.register_widget)
     
     def login_user(self, name, role):
