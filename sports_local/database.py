@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import bcrypt
 
 DB_NAME = "sports_local.db"
 
@@ -7,6 +8,18 @@ def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
+
+def hash_password(password):
+    """Genera un hash seguro de la contraseña usando bcrypt"""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def verify_password(password, hashed_password):
+    """Verifica que una contraseña coincida con su hash"""
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except:
+        return False
 
 def init_db():
     conn = get_db_connection()
@@ -74,25 +87,36 @@ def init_db():
     # Create default admin if not exists
     cursor.execute('SELECT * FROM users WHERE email = ?', ('admin@ranyave.com',))
     if not cursor.fetchone():
+        admin_password = hash_password('admin123')
         cursor.execute('INSERT INTO users (email, name, phone, password, role) VALUES (?, ?, ?, ?, ?)',
-                       ('admin@ranyave.com', 'Administrador', '', 'admin123', 'admin'))
+                       ('admin@ranyave.com', 'Administrador', '', admin_password, 'admin'))
     
     # Create default user if not exists
     cursor.execute('SELECT * FROM users WHERE email = ?', ('user@example.com',))
     if not cursor.fetchone():
+        user_password = hash_password('user123')
         cursor.execute('INSERT INTO users (email, name, phone, password, role) VALUES (?, ?, ?, ?, ?)',
-                       ('user@example.com', 'Usuario', '', 'user123', 'user'))
+                       ('user@example.com', 'Usuario', '', user_password, 'user'))
 
     # Create requested users "123"
     cursor.execute('SELECT * FROM users WHERE email = ?', ('123',))
     if not cursor.fetchone():
+        user_pass_123 = hash_password('321')
         cursor.execute('INSERT INTO users (email, name, phone, password, role) VALUES (?, ?, ?, ?, ?)',
-                       ('123', 'Usuario 123', '1234567890', '123', 'user'))
+                       ('123', 'Usuario 123', '1234567890', user_pass_123, 'user'))
                        
     cursor.execute('SELECT * FROM users WHERE email = ?', ('1234',))
     if not cursor.fetchone():
+        user_pass_1234 = hash_password('123')
         cursor.execute('INSERT INTO users (email, name, phone, password, role) VALUES (?, ?, ?, ?, ?)',
-                       ('1234', 'Usuario 1234', '1234567890', '123', 'user'))
+                       ('1234', 'Usuario 1234', '1234567890', user_pass_1234, 'user'))
+
+    # Create Gustavo user if not exists
+    cursor.execute('SELECT * FROM users WHERE email = ?', ('gustavorestrepo54321@gmail.com',))
+    if not cursor.fetchone():
+        gustavo_pass = hash_password('gustabayern7')
+        cursor.execute('INSERT INTO users (email, name, phone, password, role) VALUES (?, ?, ?, ?, ?)',
+                       ('gustavorestrepo54321@gmail.com', 'gustavo', '3112887019', gustavo_pass, 'user'))
 
     conn.commit()
     conn.close()
@@ -109,8 +133,10 @@ def get_user(email):
 def create_user(email, name, phone, password, role='user'):
     conn = get_db_connection()
     try:
+        # Hashear la contraseña antes de guardar
+        hashed_password = hash_password(password)
         conn.execute('INSERT INTO users (email, name, phone, password, role) VALUES (?, ?, ?, ?, ?)',
-                     (email, name, phone, password, role))
+                     (email, name, phone, hashed_password, role))
         conn.commit()
         return True
     except sqlite3.IntegrityError:

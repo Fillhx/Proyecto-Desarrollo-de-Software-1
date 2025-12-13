@@ -300,7 +300,7 @@ class LoginWidget(BasePage):
         
         # Verificar en BD
         user = database.get_user(email)
-        if user and user["password"] == password:
+        if user and database.verify_password(password, user["password"]):
             # Login exitoso
             role = user["role"]
             name = user["name"]
