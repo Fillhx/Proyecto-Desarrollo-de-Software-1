@@ -85,6 +85,51 @@ python sports_local/main.py
 
 ---
 
+## 🧪 Pruebas Unitarias
+
+El proyecto incluye pruebas unitarias automatizadas usando **pytest** para validar el funcionamiento de los módulos críticos.
+
+### Ejecutar todos los tests
+
+```bash
+pytest test_basics.py -v
+```
+
+### Ejecutar una clase de tests específica
+
+```bash
+pytest test_basics.py::TestSeguridad -v
+pytest test_basics.py::TestUsuarios -v
+pytest test_basics.py::TestEscenarios -v
+pytest test_basics.py::TestReservas -v
+```
+
+### Ejecutar un test específico
+
+```bash
+pytest test_basics.py::TestSeguridad::test_hash_password -v
+```
+
+### Resultado esperado
+
+Deberías ver un mensaje como:
+
+```
+===== 16 passed in 16.70s =====
+```
+
+### Instalación de pytest (si no está instalado)
+
+```bash
+pip install pytest
+```
+
+### Documentación de pruebas
+
+Para más detalles sobre las pruebas realizadas, consulta [PRUEBA_UNITARIA_RESUMEN.md](PRUEBA_UNITARIA_RESUMEN.md)
+
+---
+
 ## 📁 Estructura del Proyecto
 
 ```
