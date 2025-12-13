@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout,
                              QVBoxLayout, QLabel, QLineEdit, QPushButton, QFrame, 
                              QMessageBox, QStackedWidget, QTableWidget, QTableWidgetItem,
                              QHeaderView, QDialog, QFormLayout, QComboBox, QSpinBox,
-                             QDateEdit, QTimeEdit, QDoubleSpinBox)
+                             QDateEdit, QTimeEdit, QDoubleSpinBox, QScrollArea, QGridLayout,
+                             QSizePolicy, QSpacerItem)
 from PyQt5.QtGui import QFont, QColor, QPixmap, QPainter, QPen
 from PyQt5.QtCore import Qt, QDate, QTime
 from PIL import Image, ImageDraw
@@ -1740,16 +1741,17 @@ class UserDashboard(BasePage):
         """
 
 class ReservationDialog(BaseDialog):
-    """Diálogo para crear reservas con tabla de escenarios disponibles"""
+    """Diálogo para crear reservas con tarjetas visuales de escenarios disponibles"""
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
         self.setWindowTitle(tr("user_reserve"))
-        self.setMinimumSize(1000, 600)
+        self.setMinimumSize(1200, 700)
         
         # Conectar a cambios de idioma
         get_language_manager().language_changed.connect(self.update_ui)
         
+        self.selected_venue_id = None
         self.init_ui()
     
     def init_ui(self):
@@ -1773,28 +1775,66 @@ class ReservationDialog(BaseDialog):
         
         layout.addSpacing(10)
         
-        # Tabla de escenarios disponibles
-        self.table = QTableWidget()
-        self.table.setColumnCount(7)
-        self.update_table_headers()
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                color: black;
-                gridline-color: #ccc;
-                selection-background-color: #4a90e2;
+        # Scroll area para las tarjetas
+        from PyQt5.QtWidgets import QScrollArea, QGridLayout, QSpacerItem, QSizePolicy
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                background-color: rgba(255, 255, 255, 0.02);
             }
-            QHeaderView::section {
-                background-color: white;
-                color: black;
-                font-weight: bold;
-                border: 1px solid #ccc;
+            QScrollBar:vertical {
+                border: none;
+                background-color: rgba(255, 255, 255, 0.05);
+                width: 12px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #87CEEB;
+                border-radius: 6px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #4A90E2;
             }
         """)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SingleSelection)
-        layout.addWidget(self.table)
+        
+        # Container para las tarjetas
+        cards_widget = QWidget()
+        self.cards_layout = QGridLayout()
+        self.cards_layout.setSpacing(16)
+        self.cards_layout.setContentsMargins(12, 12, 12, 12)
+        cards_widget.setLayout(self.cards_layout)
+        scroll.setWidget(cards_widget)
+        
+        layout.addWidget(scroll)
+        
+        layout.addSpacing(10)
+        
+        # Panel de información de la cancha seleccionada
+        self.info_frame = QFrame()
+        self.info_frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(135, 206, 235, 0.3);
+                border-radius: 8px;
+            }
+        """)
+        self.info_frame.setMinimumHeight(0)
+        self.info_frame.setMaximumHeight(0)
+        info_layout = QVBoxLayout()
+        info_layout.setContentsMargins(12, 12, 12, 12)
+        info_layout.setSpacing(8)
+        
+        self.info_label = QLabel("")
+        self.info_label.setStyleSheet("color: rgba(255, 255, 255, 0.9); font-size: 11px;")
+        self.info_label.setWordWrap(True)
+        info_layout.addWidget(self.info_label)
+        
+        self.info_frame.setLayout(info_layout)
+        layout.addWidget(self.info_frame)
         
         layout.addSpacing(10)
         
@@ -1822,32 +1862,26 @@ class ReservationDialog(BaseDialog):
         # Cargar los escenarios disponibles en la tabla
         self.load_available_venues()
     
-    def update_table_headers(self):
-        """Actualiza los encabezados de la tabla con el idioma actual"""
-        headers = tr("reservation_table_headers").split("|")
-        self.table.setHorizontalHeaderLabels(headers)
-    
     def update_ui(self):
         """Actualiza los textos cuando cambia el idioma"""
         self.setWindowTitle(tr("user_reserve"))
         self.title.setText(tr("reservation_title"))
         self.subtitle.setText(tr("reservation_subtitle"))
-        self.update_table_headers()
         self.back_btn.setText(tr("reservation_back"))
         self.reserve_btn.setText(tr("reservation_reserve_btn"))
     
     def load_available_venues(self):
-        """Carga los escenarios activos y no reservados en la tabla"""
+        """Carga los escenarios activos como tarjetas visuales (incluye canchas con reservas canceladas)"""
         venues = database.get_all_venues()
         reservations = database.get_all_reservations()
         
-        # Crear un conjunto de (venue_id, date, time) que ya están reservados
+        # Crear un conjunto de (venue_id, date, time) que ya están ACTIVAMENTE reservados
         reserved_slots = set()
         for res in reservations.values():
-            if res.get("status") == "confirmed":
+            if res.get("status") == "active":  # Solo contar como reservado si está ACTIVO
                 reserved_slots.add((res.get("venue_id"), res.get("date"), res.get("time")))
         
-        # Filtrar escenarios activos que no estén reservados
+        # Filtrar escenarios activos que no estén reservados (incluyendo los con cancelaciones)
         available_venues = {}
         for vid, vdata in venues.items():
             if vdata.get('status') == 'active':
@@ -1857,78 +1891,185 @@ class ReservationDialog(BaseDialog):
                     date_str = parts[0] if len(parts) > 0 else ""
                     time_str = parts[1] if len(parts) > 1 else ""
                     
-                    # Solo incluir si no está reservado
+                    # Solo incluir si no está activamente reservado
                     if (vid, date_str, time_str) not in reserved_slots:
                         available_venues[vid] = vdata
         
-        self.table.setRowCount(len(available_venues))
-        self.venues_list = []  # Para guardar el ID asociado a cada fila
+        # Limpiar tarjetas anteriores
+        while self.cards_layout.count():
+            child = self.cards_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        self.venues_list = []  # Para guardar el ID asociado a cada tarjeta
         
         if not available_venues:
-            self.table.setRowCount(1)
-            no_venues_item = QTableWidgetItem(tr("reservation_error_no_venues"))
-            no_venues_item.setForeground(QColor(200, 0, 0))
-            self.table.setItem(0, 0, no_venues_item)
+            no_venues_label = QLabel(tr("reservation_error_no_venues"))
+            no_venues_label.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
+            no_venues_label.setAlignment(Qt.AlignCenter)
+            self.cards_layout.addWidget(no_venues_label)
             return
         
+        # Crear tarjetas en grid
+        col = 0
         row = 0
+        max_cols = 3
+        
         for venue_id, venue in available_venues.items():
             self.venues_list.append(venue_id)
+            card = self.create_venue_card(venue_id, venue)
+            self.cards_layout.addWidget(card, row, col)
             
-            # Name
-            name_item = QTableWidgetItem(venue.get("name", ""))
-            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 0, name_item)
-            
-            # Type
-            type_item = QTableWidgetItem(venue.get("type", ""))
-            type_item.setFlags(type_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 1, type_item)
-            
-            # Location
-            location_item = QTableWidgetItem(venue.get("location", ""))
-            location_item.setFlags(location_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 2, location_item)
-            
-            # Capacity
-            capacity_item = QTableWidgetItem(str(venue.get("capacity", "")))
-            capacity_item.setFlags(capacity_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 3, capacity_item)
-            
-            # Date and Time from schedule
-            schedule = venue.get("schedule", "")
-            if schedule:
-                parts = schedule.split(" ")
-                date_str = parts[0] if len(parts) > 0 else ""
-                time_str = parts[1] if len(parts) > 1 else ""
-            else:
-                date_str = ""
-                time_str = ""
-            
-            date_item = QTableWidgetItem(date_str)
-            date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 4, date_item)
-            
-            time_item = QTableWidgetItem(time_str)
-            time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 5, time_item)
-            
-            # Price
-            price = float(venue.get("price", 0.0))
-            price_item = QTableWidgetItem(f"${price:.2f}")
-            price_item.setFlags(price_item.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, 6, price_item)
-            
-            row += 1
+            col += 1
+            if col >= max_cols:
+                col = 0
+                row += 1
+        
+        # Agregar stretch al final
+        self.cards_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding), row + 1, 0, 1, max_cols)
+    
+    def create_venue_card(self, venue_id, venue_data):
+        """Crea una tarjeta visual para una cancha"""
+        card = QFrame()
+        card.setFrameShape(QFrame.StyledPanel)
+        card.setMinimumHeight(320)
+        card.setMaximumWidth(280)
+        card.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.95);
+                border: 2px solid #87CEEB;
+                border-radius: 12px;
+            }
+            QFrame:hover {
+                border: 2px solid #4A90E2;
+                background-color: rgba(255, 255, 255, 1);
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
+        
+        # Imagen según tipo de cancha
+        image_label = QLabel()
+        image_label.setMinimumHeight(140)
+        image_label.setMinimumWidth(260)
+        image_label.setAlignment(Qt.AlignCenter)
+        image_label.setScaledContents(False)
+        
+        # Mapeo de tipos de cancha a nombres de archivo
+        sport_type = venue_data['type'].lower()
+        sport_mapping = {
+            'baloncesto': 'baloncesto.jpg',
+            'tenis': 'tenis.jpg',
+            'voleibol': 'voleibol.jpg',
+            'fútbol': 'futbol.jpg',
+            'natación': 'natacion.jpg',
+            'otro': 'otro.jpg'
+        }
+        
+        image_path = sport_mapping.get(sport_type, 'otro.jpg')
+        assets_path = os.path.join(os.path.dirname(__file__), 'assets', 'sports', image_path)
+        
+        if os.path.exists(assets_path):
+            pixmap = QPixmap(assets_path)
+            scaled_pixmap = pixmap.scaledToWidth(260, Qt.SmoothTransformation)
+            image_label.setPixmap(scaled_pixmap)
+            image_label.setStyleSheet("border-radius: 8px;")
+        else:
+            # Fallback a gradiente si no existe la imagen
+            image_label.setStyleSheet("""
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                            stop:0 #87CEEB, stop:1 #4A90E2);
+                border-radius: 8px;
+            """)
+            image_label.setText("⚽")
+            image_label.setFont(QFont("Arial", 28))
+        
+        layout.addWidget(image_label)
+        
+        # Nombre
+        name_label = QLabel(venue_data["name"])
+        name_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        name_label.setStyleSheet("color: #1e3a5f;")
+        name_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(name_label)
+        
+        # Información
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(3)
+        
+        # Tipo
+        type_text = QLabel(f"<b>Tipo:</b> {venue_data['type']}")
+        type_text.setStyleSheet("color: #2E5C8A; font-size: 10px;")
+        info_layout.addWidget(type_text)
+        
+        # Ubicación
+        location_text = QLabel(f"<b>Ubicación:</b> {venue_data['location']}")
+        location_text.setStyleSheet("color: #2E5C8A; font-size: 10px;")
+        location_text.setWordWrap(True)
+        info_layout.addWidget(location_text)
+        
+        # Horario
+        schedule_text = QLabel(f"<b>Horario:</b> {venue_data.get('schedule', 'N/A')}")
+        schedule_text.setStyleSheet("color: #2E5C8A; font-size: 10px;")
+        schedule_text.setWordWrap(True)
+        info_layout.addWidget(schedule_text)
+        
+        # Precio (destacado)
+        price_text = QLabel(f"<b>Precio:</b> ${float(venue_data.get('price', 0.0)):.2f}")
+        price_text.setStyleSheet("color: #4A90E2; font-size: 11px; font-weight: bold;")
+        info_layout.addWidget(price_text)
+        
+        layout.addLayout(info_layout)
+        layout.addSpacing(4)
+        
+        # Botón seleccionar
+        select_btn = QPushButton("Seleccionar Cancha")
+        select_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4A90E2;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-weight: bold;
+                font-size: 10px;
+            }
+            QPushButton:hover {
+                background-color: #2E5C8A;
+            }
+        """)
+        select_btn.clicked.connect(lambda: self.on_venue_selected(venue_id, venue_data))
+        layout.addWidget(select_btn)
+        
+        card.setLayout(layout)
+        return card
+    
+    def on_venue_selected(self, venue_id, venue_data):
+        """Cuando se selecciona una cancha"""
+        self.selected_venue_id = venue_id
+        
+        # Mostrar info en el panel
+        info_text = f"""
+        <b style='font-size: 14px;'>{venue_data['name']}</b><br>
+        Tipo: {venue_data['type']}<br>
+        Ubicación: {venue_data['location']}<br>
+        Capacidad: {venue_data['capacity']} personas<br>
+        Horario: {venue_data.get('schedule', 'No especificado')}<br>
+        Precio: ${float(venue_data.get('price', 0.0)):.2f}
+        """
+        self.info_label.setText(info_text)
+        
+        # Expandir el panel de información
+        self.info_frame.setMaximumHeight(120)
         
     def make_reservation(self):
-        current_row = self.table.currentRow()
-        
-        if current_row < 0 or current_row >= len(self.venues_list):
+        if not hasattr(self, 'selected_venue_id') or not self.selected_venue_id:
             show_styled_message(self, tr("error"), tr("reservation_error_select"), "warning")
             return
         
-        venue_id = self.venues_list[current_row]
+        venue_id = self.selected_venue_id
         venue = database.get_all_venues()[venue_id]
         
         # Extraer fecha y hora del schedule
@@ -2157,12 +2298,12 @@ class PaymentDialog(BaseDialog):
 
 
 class MyReservationsDialog(BaseDialog):
-    """Diálogo para ver mis reservas"""
+    """Diálogo para ver mis reservas en tarjetas"""
     def __init__(self, user_name, parent=None):
         super().__init__(parent)
         self.user_name = user_name
         self.setWindowTitle(tr("user_my_reservations"))
-        self.setMinimumSize(800, 500)
+        self.setMinimumSize(1200, 700)
         
         # Conectar a cambios de idioma
         get_language_manager().language_changed.connect(self.update_ui)
@@ -2180,25 +2321,35 @@ class MyReservationsDialog(BaseDialog):
         self.title.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.title)
         
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.update_table_headers()
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                color: black;
-                gridline-color: #ccc;
+        # Scroll area para las tarjetas
+        scroll = QScrollArea()
+        scroll.setStyleSheet("""
+            QScrollArea {
+                background-color: transparent;
+                border: none;
             }
-            QHeaderView::section {
-                background-color: white;
-                color: black;
-                font-weight: bold;
-                border: 1px solid #ccc;
+            QScrollBar:vertical {
+                background-color: #f0f0f0;
+                width: 12px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #87CEEB;
+                border-radius: 6px;
             }
         """)
-        layout.addWidget(self.table)
+        scroll.setWidgetResizable(True)
         
+        # Contenedor para las tarjetas
+        scroll_widget = QWidget()
+        self.cards_layout = QGridLayout()
+        self.cards_layout.setSpacing(20)
+        self.cards_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_widget.setLayout(self.cards_layout)
+        scroll.setWidget(scroll_widget)
+        layout.addWidget(scroll)
+        
+        # Botón cerrar
         self.close_btn = QPushButton(tr("my_reservations_back"))
         self.close_btn.setStyleSheet(self.get_button_style())
         self.close_btn.clicked.connect(self.accept)
@@ -2207,42 +2358,178 @@ class MyReservationsDialog(BaseDialog):
         self.load_data()
         self.setLayout(layout)
     
-    def update_table_headers(self):
-        """Actualiza los encabezados de la tabla con el idioma actual"""
-        headers = tr("my_reservations_table_headers").split("|")
-        self.table.setHorizontalHeaderLabels(headers)
-    
     def update_ui(self):
         """Actualiza los textos cuando cambia el idioma"""
         self.setWindowTitle(tr("user_my_reservations"))
         self.title.setText(tr("my_reservations_title"))
-        self.update_table_headers()
         self.close_btn.setText(tr("my_reservations_back"))
         self.load_data()
         
     def load_data(self):
+        """Carga las reservas del usuario y las muestra en tarjetas"""
         reservations = database.get_all_reservations()
         user_reservations = {k: v for k, v in reservations.items() if v.get("user") == self.user_name or v.get("user_email") == self.user_name}
         
-        self.table.setRowCount(len(user_reservations))
+        # Limpiar tarjetas anteriores
+        while self.cards_layout.count() > 0:
+            child = self.cards_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         
-        for i, (rid, res) in enumerate(user_reservations.items()):
-            self.table.setItem(i, 0, QTableWidgetItem(res["venue_name"]))
-            self.table.setItem(i, 1, QTableWidgetItem(res["date"]))
-            self.table.setItem(i, 2, QTableWidgetItem(res["time"]))
-            self.table.setItem(i, 3, QTableWidgetItem(res["status"]))
+        if not user_reservations:
+            no_res_label = QLabel(tr("my_reservations_none") if "my_reservations_none" in tr("my_reservations_title") else "No tienes reservas")
+            no_res_label.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
+            no_res_label.setAlignment(Qt.AlignCenter)
+            self.cards_layout.addWidget(no_res_label)
+            return
+        
+        # Crear tarjetas en grid de 3 columnas
+        col = 0
+        row = 0
+        max_cols = 3
+        
+        for res_id, res in user_reservations.items():
+            card = self.create_reservation_card(res_id, res)
+            self.cards_layout.addWidget(card, row, col)
             
-            if res["status"] == "cancelled":
-                status_label = QLabel(tr("my_reservations_cancelled"))
-                status_label.setAlignment(Qt.AlignCenter)
-                status_label.setStyleSheet("color: gray; font-weight: bold;")
-                self.table.setCellWidget(i, 4, status_label)
-            else:
-                cancel_btn = QPushButton(tr("my_reservations_cancel"))
-                cancel_btn.setStyleSheet("background-color: #ff4444; color: white; border-radius: 5px; padding: 5px;")
-                cancel_btn.clicked.connect(lambda checked, r=rid: self.cancel_reservation(r))
-                self.table.setCellWidget(i, 4, cancel_btn)
-            
+            col += 1
+            if col >= max_cols:
+                col = 0
+                row += 1
+        
+        # Agregar espacios en blanco al final
+        self.cards_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding), row + 1, 0, 1, max_cols)
+    
+    def create_reservation_card(self, res_id, res_data):
+        """Crea una tarjeta visual para una reserva"""
+        card = QFrame()
+        card.setFrameShape(QFrame.StyledPanel)
+        card.setMinimumHeight(320)
+        card.setMaximumWidth(280)
+        card.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.95);
+                border: 2px solid #87CEEB;
+                border-radius: 12px;
+            }
+            QFrame:hover {
+                border: 2px solid #4A90E2;
+                background-color: rgba(255, 255, 255, 1);
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
+        
+        # Imagen según tipo de cancha
+        image_label = QLabel()
+        image_label.setMinimumHeight(140)
+        image_label.setMinimumWidth(260)
+        image_label.setAlignment(Qt.AlignCenter)
+        image_label.setScaledContents(False)
+        
+        # Obtener tipo de cancha
+        venues = database.get_all_venues()
+        venue_id = res_data.get("venue_id", "")
+        venue_type = "otro"
+        if venue_id in venues:
+            venue_type = venues[venue_id].get("type", "otro").lower()
+        
+        sport_mapping = {
+            'baloncesto': 'baloncesto.jpg',
+            'tenis': 'tenis.jpg',
+            'voleibol': 'voleibol.jpg',
+            'fútbol': 'futbol.jpg',
+            'natación': 'natacion.jpg',
+            'otro': 'otro.jpg'
+        }
+        
+        image_path = sport_mapping.get(venue_type, 'otro.jpg')
+        assets_path = os.path.join(os.path.dirname(__file__), 'assets', 'sports', image_path)
+        
+        if os.path.exists(assets_path):
+            pixmap = QPixmap(assets_path)
+            scaled_pixmap = pixmap.scaledToWidth(260, Qt.SmoothTransformation)
+            image_label.setPixmap(scaled_pixmap)
+            image_label.setStyleSheet("border-radius: 8px;")
+        else:
+            image_label.setStyleSheet("""
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                            stop:0 #87CEEB, stop:1 #4A90E2);
+                border-radius: 8px;
+            """)
+            image_label.setText("⚽")
+            image_label.setFont(QFont("Arial", 28))
+        
+        layout.addWidget(image_label)
+        
+        # Nombre de la cancha
+        name_label = QLabel(res_data.get("venue_name", "Cancha"))
+        name_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        name_label.setStyleSheet("color: #1e3a5f;")
+        name_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(name_label)
+        
+        # Información de la reserva
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(3)
+        
+        date_text = QLabel(f"<b>Fecha:</b> {res_data.get('date', 'N/A')}")
+        date_text.setStyleSheet("color: #2E5C8A; font-size: 10px;")
+        info_layout.addWidget(date_text)
+        
+        time_text = QLabel(f"<b>Hora:</b> {res_data.get('time', 'N/A')}")
+        time_text.setStyleSheet("color: #2E5C8A; font-size: 10px;")
+        info_layout.addWidget(time_text)
+        
+        status = res_data.get("status", "active")
+        status_text = QLabel(f"<b>Estado:</b> {'Cancelada' if status == 'cancelled' else 'Activa'}")
+        status_color = "#999999" if status == "cancelled" else "#4A90E2"
+        status_text.setStyleSheet(f"color: {status_color}; font-size: 10px; font-weight: bold;")
+        info_layout.addWidget(status_text)
+        
+        layout.addLayout(info_layout)
+        layout.addSpacing(4)
+        
+        # Botón cancelar o deshabilitado si ya está cancelada
+        if status == "cancelled":
+            cancel_btn = QPushButton(tr("my_reservations_cancelled"))
+            cancel_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #999999;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+            """)
+            cancel_btn.setEnabled(False)
+        else:
+            cancel_btn = QPushButton(tr("my_reservations_cancel"))
+            cancel_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #ff4444;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #cc0000;
+                }
+            """)
+            cancel_btn.clicked.connect(lambda: self.cancel_reservation(res_id))
+        
+        layout.addWidget(cancel_btn)
+        
+        card.setLayout(layout)
+        return card
+    
     def cancel_reservation(self, res_id):
         reply = QMessageBox.question(self, tr("my_reservations_confirm_title"), 
                                    tr("my_reservations_confirm"),
