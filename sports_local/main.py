@@ -304,7 +304,7 @@ class LoginWidget(BasePage):
             # Login exitoso
             role = user["role"]
             name = user["name"]
-            self.parent_window.login_user(name, role)
+            self.parent_window.login_user(email, role)  # Pasar email en lugar de name
             return
         
         show_styled_message(self, tr("error"), tr("login_error_invalid_credentials"), "warning")
@@ -579,10 +579,18 @@ class RegisterWidget(BasePage):
         
         # Registrar usuario
         if database.create_user(email, name, phone, password, role):
+            # Enviar email de bienvenida
+            email_sent = database.send_welcome_email(email, name)
+            
             if is_admin:
                 msg = tr("register_success_admin", name=name)
             else:
                 msg = tr("register_success_user", name=name)
+            
+            # Agregar nota si el email fue enviado
+            if email_sent:
+                msg += "\n\n✅ Se ha enviado un email de bienvenida a " + email
+            
             show_styled_message(self, tr("information"), msg, "information")
             self.clear_fields()
             self.parent_window.show_login()
@@ -1885,10 +1893,25 @@ class ReservationDialog(BaseDialog):
         }
         
         database.save_reservation(res_data)
+        
+        # Enviar email de confirmación de reserva
+        # Obtener nombre del usuario desde la BD
+        try:
+            user = database.get_user(self.user_name)
+            if user:
+                user_name = user.get("name", "Usuario")
+                user_email = self.user_name
+                print(f"DEBUG: Enviando email a {user_email} con nombre {user_name}")
+                database.send_reservation_email(user_email, user_name, venue_name, date_str, time_str, price)
+            else:
+                print(f"DEBUG: Usuario no encontrado en BD: {self.user_name}")
+        except Exception as e:
+            print(f"ERROR: {e}")
+        
         show_styled_message(
             self,
             tr("reservation_success_title"),
-            tr("reservation_success", venue_name=venue_name, date=date_str, time=time_str, price=f"{price:.2f}"),
+            tr("reservation_success", venue_name=venue_name, date=date_str, time=time_str, price=f"{price:.2f}") + "\n\n✅ Se ha enviado un email de confirmación",
             "information"
         )
         self.accept()
@@ -2129,6 +2152,35 @@ class MyReservationsDialog(BaseDialog):
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         
         if reply == QMessageBox.Yes:
+            # Obtener datos de la reserva antes de cancelar
+            try:
+                reservations = database.get_all_reservations()
+                reservation = reservations.get(res_id, {})
+                
+                # Enviar email de cancelación
+                if reservation:
+                    user_email = reservation.get("user_email", self.user_name)
+                    venue_name = reservation.get("venue_name", "Escenario")
+                    date = reservation.get("date", "")
+                    time = reservation.get("time", "")
+                    
+                    # Obtener el nombre del usuario y el precio del venue
+                    user = database.get_user(user_email)
+                    user_name = user.get("name", "Usuario") if user else "Usuario"
+                    
+                    venue_id = reservation.get("venue_id", "")
+                    venues = database.get_all_venues()
+                    price = 0.0
+                    if venue_id in venues:
+                        price = float(venues[venue_id].get("price", 0.0))
+                    
+                    print(f"DEBUG: Cancelación - Enviando email a {user_email}")
+                    database.send_cancellation_email(user_email, user_name, venue_name, date, time, price)
+                else:
+                    print(f"DEBUG: Reserva no encontrada: {res_id}")
+            except Exception as e:
+                print(f"ERROR en cancelación: {e}")
+            
             database.update_reservation_status(res_id, 'cancelled')
             self.load_data()
 
@@ -2251,6 +2303,35 @@ class AdminReservationsDialog(BaseDialog):
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         
         if reply == QMessageBox.Yes:
+            # Obtener datos de la reserva antes de cancelar
+            try:
+                reservations = database.get_all_reservations()
+                reservation = reservations.get(res_id, {})
+                
+                # Enviar email de cancelación
+                if reservation:
+                    user_email = reservation.get("user_email", "")
+                    venue_name = reservation.get("venue_name", "Escenario")
+                    date = reservation.get("date", "")
+                    time = reservation.get("time", "")
+                    
+                    # Obtener el nombre del usuario y el precio
+                    user = database.get_user(user_email)
+                    user_name = user.get("name", "Usuario") if user else "Usuario"
+                    
+                    venue_id = reservation.get("venue_id", "")
+                    venues = database.get_all_venues()
+                    price = 0.0
+                    if venue_id in venues:
+                        price = float(venues[venue_id].get("price", 0.0))
+                    
+                    print(f"DEBUG: Admin cancelación - Enviando email a {user_email}")
+                    database.send_cancellation_email(user_email, user_name, venue_name, date, time, price)
+                else:
+                    print(f"DEBUG: Reserva no encontrada por admin: {res_id}")
+            except Exception as e:
+                print(f"ERROR en cancelación admin: {e}")
+            
             database.update_reservation_status(res_id, 'cancelled')
             self.load_data()
 
@@ -2445,11 +2526,11 @@ class MainWindow(QMainWindow):
         self.register_widget.update_ui()
         self.stacked_widget.setCurrentWidget(self.register_widget)
     
-    def login_user(self, name, role):
+    def login_user(self, email, role):
         if role == "admin":
-            dashboard = AdminDashboard(name, self)
+            dashboard = AdminDashboard(email, self)
         else:
-            dashboard = UserDashboard(name, self)
+            dashboard = UserDashboard(email, self)
         
         self.stacked_widget.addWidget(dashboard)
         self.stacked_widget.setCurrentWidget(dashboard)

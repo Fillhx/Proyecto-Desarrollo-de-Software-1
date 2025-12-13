@@ -1,6 +1,9 @@
 import sqlite3
 import os
 import bcrypt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 DB_NAME = "sports_local.db"
 
@@ -244,5 +247,109 @@ def update_reservation_status(res_id, status):
     conn.execute('UPDATE reservations SET status = ? WHERE id = ?', (status, res_id))
     conn.commit()
     conn.close()
+
+def send_welcome_email(user_email, user_name):
+    """Envía un email de bienvenida al usuario registrado"""
+    try:
+        from email_config import SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD, EMAIL_SUBJECT, get_welcome_email_body
+        
+        # Validar que las credenciales estén configuradas
+        if SENDER_EMAIL == "tu_correo@gmail.com" or SENDER_PASSWORD == "tu_contraseña_aplicacion":
+            print("⚠️  Advertencia: Las credenciales de email no están configuradas en email_config.py")
+            return False
+        
+        # Crear mensaje
+        message = MIMEMultipart("alternative")
+        message["Subject"] = EMAIL_SUBJECT
+        message["From"] = SENDER_EMAIL
+        message["To"] = user_email
+        
+        # Obtener contenido HTML del email
+        html_body = get_welcome_email_body(user_name, user_email)
+        part = MIMEText(html_body, "html")
+        message.attach(part)
+        
+        # Enviar email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()  # Iniciar encriptación TLS
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, user_email, message.as_string())
+        
+        print(f"✅ Email de bienvenida enviado a {user_email}")
+        return True
+        
+    except ImportError:
+        print("⚠️  Error: No se encontró el archivo email_config.py")
+        return False
+    except smtplib.SMTPAuthenticationError:
+        print("❌ Error: Credenciales de email inválidas")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ Error SMTP: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Error al enviar email: {e}")
+        return False
+
+def send_reservation_email(user_email, user_name, venue_name, date, time, price):
+    """Envía un email de confirmación de reserva"""
+    try:
+        from email_config import SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD, get_reservation_email_body
+        
+        if SENDER_EMAIL == "tu_correo@gmail.com" or SENDER_PASSWORD == "tu_contraseña_aplicacion":
+            print("⚠️  Advertencia: Las credenciales de email no están configuradas")
+            return False
+        
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "✅ Reserva Confirmada - Ranyave Sports"
+        message["From"] = SENDER_EMAIL
+        message["To"] = user_email
+        
+        html_body = get_reservation_email_body(user_name, venue_name, date, time, price)
+        part = MIMEText(html_body, "html")
+        message.attach(part)
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, user_email, message.as_string())
+        
+        print(f"✅ Email de reserva confirmada enviado a {user_email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error al enviar email de reserva: {e}")
+        return False
+
+def send_cancellation_email(user_email, user_name, venue_name, date, time, price):
+    """Envía un email de cancelación de reserva"""
+    try:
+        from email_config import SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD, get_cancellation_email_body
+        
+        if SENDER_EMAIL == "tu_correo@gmail.com" or SENDER_PASSWORD == "tu_contraseña_aplicacion":
+            print("⚠️  Advertencia: Las credenciales de email no están configuradas")
+            return False
+        
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "⚠️ Reserva Cancelada - Ranyave Sports"
+        message["From"] = SENDER_EMAIL
+        message["To"] = user_email
+        
+        html_body = get_cancellation_email_body(user_name, venue_name, date, time, price)
+        part = MIMEText(html_body, "html")
+        message.attach(part)
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, user_email, message.as_string())
+        
+        print(f"✅ Email de cancelación enviado a {user_email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error al enviar email de cancelación: {e}")
+        return False
+
 
 # Event Operations
