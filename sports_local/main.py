@@ -553,6 +553,10 @@ class RegisterWidget(BasePage):
             show_styled_message(self, tr("error"), tr("register_error_empty"), "warning")
             return
         
+        if len(name) < 3:
+            show_styled_message(self, tr("error"), "El nombre debe tener al menos 3 caracteres", "warning")
+            return
+        
         if not self.is_valid_email(email):
             show_styled_message(self, tr("error"), tr("register_error_invalid_email"), "warning")
             return
@@ -1070,6 +1074,29 @@ class VenueForm(BaseDialog):
         
         if not name or not location:
             show_styled_message(self, tr("error"), "Por favor completa todos los campos", "warning")
+            return
+        
+        if capacity <= 0:
+            show_styled_message(self, tr("error"), "La capacidad debe ser mayor a 0", "warning")
+            return
+        
+        if price < 0:
+            show_styled_message(self, tr("error"), "El precio no puede ser negativo", "warning")
+            return
+        
+        # Validar fecha y hora no en el pasado
+        from datetime import datetime
+        selected_date = self.schedule_date.date()
+        selected_time = self.schedule_time.time()
+        current_date = QDate.currentDate()
+        current_time = QTime.currentTime()
+        
+        if selected_date < current_date:
+            show_styled_message(self, tr("error"), "La fecha no puede estar en el pasado", "warning")
+            return
+        
+        if selected_date == current_date and selected_time <= current_time:
+            show_styled_message(self, tr("error"), "La hora debe ser posterior a la hora actual", "warning")
             return
             
         venue_id = str(uuid.uuid4())
@@ -1806,6 +1833,24 @@ class ReservationDialog(BaseDialog):
             return
         
         date_str, time_str = schedule.split(" ", 1)
+        
+        # Validar que la fecha y hora no estén en el pasado
+        try:
+            from datetime import datetime, date as date_class, time as time_class
+            schedule_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            schedule_time = datetime.strptime(time_str, "%H:%M").time()
+            today = date_class.today()
+            current_time = datetime.now().time()
+            
+            if schedule_date < today:
+                show_styled_message(self, tr("error"), "No se puede reservar un escenario con fecha en el pasado", "warning")
+                return
+            
+            if schedule_date == today and schedule_time <= current_time:
+                show_styled_message(self, tr("error"), "No se puede reservar un escenario con hora en el pasado", "warning")
+                return
+        except:
+            pass
         
         # Verificar disponibilidad
         reservations = database.get_all_reservations()
