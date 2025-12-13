@@ -25,31 +25,33 @@ IMAGE_PATH = "assets/logo_ranyave.png"  # Cambia esta ruta a tu imagen
 database.init_db()
 
 def show_styled_message(parent, title, message, message_type="information"):
-    """Muestra un mensaje con estilo personalizado (fondo blanco)"""
+    """Muestra un mensaje con estilo personalizado y diseño moderno"""
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
     msg_box.setStyleSheet("""
         QMessageBox {
-            background-color: white;
+            background-color: #FFFFFF;
         }
         QMessageBox QLabel {
-            color: black;
-            background-color: white;
+            color: #1e3a5f;
+            background-color: #FFFFFF;
         }
         QMessageBox QTextEdit {
-            color: black;
-            background-color: white;
+            color: #1e3a5f;
+            background-color: #F0F8FF;
         }
         QMessageBox QPushButton {
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 5px;
-            min-width: 50px;
-            color: black;
+            background-color: #87CEEB;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 20px;
+            color: #FFFFFF;
+            font-weight: bold;
+            min-width: 80px;
         }
         QMessageBox QPushButton:hover {
-            background-color: #f0f0f0;
+            background-color: #4A90E2;
         }
     """)
     
@@ -111,29 +113,39 @@ class BasePage(QWidget):
     @staticmethod
     def get_input_style():
         return """
-            QLineEdit, QComboBox, QDateEdit, QTimeEdit, QSpinBox {
-                background-color: transparent;
-                border: 2px solid white;
-                border-radius: 0px;
-                padding: 8px;
-                font-size: 16px;
-                color: white;
-                font-family: Arial;
+            QLineEdit, QComboBox, QDateEdit, QTimeEdit, QSpinBox, QDoubleSpinBox {
+                background-color: #FFFFFF;
+                border: 2px solid #87CEEB;
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-size: 14px;
+                color: #1e3a5f;
+                font-family: 'Segoe UI', Arial;
+                font-weight: 500;
+            }
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QTimeEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+                border: 3px solid #4A90E2;
+                background-color: #F0F8FF;
+                color: #1e3a5f;
             }
             QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 180);
+                color: #ADD8E6;
             }
             QComboBox::drop-down {
                 border: none;
+                background: transparent;
             }
             QComboBox::down-arrow {
                 image: none;
-                border-left: 2px solid white;
-                border-top: 2px solid white;
-                width: 10px;
-                height: 10px;
-                margin-right: 10px;
-                transform: rotate(45deg);
+                width: 8px;
+                height: 8px;
+                margin-right: 8px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #FFFFFF;
+                color: #1e3a5f;
+                selection-background-color: #B3E5FC;
+                border: 1px solid #87CEEB;
             }
         """
     
@@ -141,26 +153,32 @@ class BasePage(QWidget):
     def get_button_style():
         return """
             QPushButton {
-                background-color: white;
-                color: #1e3a5f;
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #87CEEB, stop:1 #4A90E2);
+                color: #FFFFFF;
                 border: none;
-                border-radius: 20px;
-                padding: 10px 30px;
+                border-radius: 8px;
+                padding: 12px 28px;
                 font-weight: bold;
                 font-size: 14px;
-                font-family: Arial;
+                font-family: 'Segoe UI', Arial;
             }
             QPushButton:hover {
-                background-color: #e0e0e0;
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A90E2, stop:1 #2E5C8A);
+                padding: 12px 28px;
             }
             QPushButton:pressed {
-                background-color: #d0d0d0;
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2E5C8A, stop:1 #1a3a5f);
             }
         """
     
     @staticmethod
     def get_label_style():
-        return "color: white; font-size: 18px; font-family: Arial; font-weight: bold;"
+        return """
+            color: #FFFFFF;
+            font-size: 14px;
+            font-family: 'Segoe UI', Arial;
+            font-weight: 600;
+        """
 
 class LoginWidget(BasePage):
     """Pantalla de Login"""
@@ -171,6 +189,35 @@ class LoginWidget(BasePage):
         
         # Conectar a cambios de idioma
         get_language_manager().language_changed.connect(self.update_ui)
+    
+    @staticmethod
+    def get_input_style():
+        return BasePage.get_input_style()
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5FA3D0, stop:1 #3D7BAC);
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 28px;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: 'Segoe UI', Arial;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3D7BAC, stop:1 #2E5C8A);
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2E5C8A, stop:1 #1a3a5f);
+            }
+        """
+    
+    @staticmethod
+    def get_label_style():
+        return BasePage.get_label_style()
     
     def init_ui(self):
         # Layout principal
@@ -412,6 +459,31 @@ class RegisterWidget(BasePage):
         
         # Conectar a cambios de idioma
         get_language_manager().language_changed.connect(self.update_ui)
+    
+    @staticmethod
+    def get_input_style():
+        return BasePage.get_input_style()
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6DADE2, stop:1 #3498DB);
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 28px;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: 'Segoe UI', Arial;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3498DB, stop:1 #2E86C1);
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2E86C1, stop:1 #1a3a5f);
+            }
+        """
     
     def init_ui(self):
         # Layout principal
@@ -790,8 +862,7 @@ class AdminDashboard(BasePage):
     
     def on_new_stages(self):
         dialog = VenueForm(self)
-        if dialog.exec_():
-            show_styled_message(self, "Éxito", "Escenario registrado correctamente", "information")
+        dialog.exec_()
     
     def on_stages_info(self):
         dialog = VenuesListDialog(self)
@@ -803,6 +874,28 @@ class AdminDashboard(BasePage):
     
     def on_logout(self):
         self.parent_window.show_welcome()
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7FB3D5, stop:1 #5B9FC6);
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 32px;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: 'Segoe UI', Arial;
+                min-width: 160px;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5B9FC6, stop:1 #4A90E2);
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A90E2, stop:1 #2E5C8A);
+            }
+        """
 
 class BaseDialog(QDialog):
     """Diálogo base con estilo"""
@@ -837,48 +930,33 @@ class BaseDialog(QDialog):
 
     @staticmethod
     def get_input_style():
-        return """
-            QLineEdit, QComboBox, QDateEdit, QTimeEdit, QSpinBox {
-                background-color: transparent;
-                border: 2px solid white;
-                border-radius: 0px;
-                padding: 8px;
-                font-size: 14px;
-                color: white;
-                font-family: Arial;
-            }
-            QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 180);
-            }
-            QComboBox QAbstractItemView {
-                background-color: #1e3a5f;
-                color: white;
-                selection-background-color: #4a90e2;
-            }
-        """
+        return BasePage.get_input_style()
     
     @staticmethod
     def get_button_style():
         return """
             QPushButton {
-                background-color: white;
-                color: #1e3a5f;
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #87CEEB, stop:1 #4A90E2);
+                color: #FFFFFF;
                 border: none;
-                border-radius: 20px;
-                padding: 10px 30px;
+                border-radius: 6px;
+                padding: 10px 20px;
                 font-weight: bold;
-                font-size: 14px;
-                font-family: Arial;
+                font-size: 12px;
             }
             QPushButton:hover {
-                background-color: #e0e0e0;
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A90E2, stop:1 #2E5C8A);
             }
             QPushButton:pressed {
-                background-color: #d0d0d0;
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2E5C8A, stop:1 #1a3a5f);
             }
         """
     
     @staticmethod
+    def get_label_style():
+        return BasePage.get_label_style()
+
+class VenueForm(BaseDialog):
     def get_label_style():
         return "color: white; font-size: 14px; font-family: Arial; font-weight: bold;"
 
@@ -1123,10 +1201,7 @@ class VenueForm(BaseDialog):
             database.save_venue(venue_data)
             self.accept()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error saving venue: {str(e)}")
-            print(f"Error details: {e}")
-            import traceback
-            traceback.print_exc()
+            show_styled_message(self, tr("error"), tr("venue_error_save", error=str(e)), "error")
 
 class VenuesListDialog(BaseDialog):
     """Diálogo para ver lista de escenarios"""
@@ -1641,6 +1716,28 @@ class UserDashboard(BasePage):
     
     def on_logout(self):
         self.parent_window.show_welcome()
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #B2EBF2, stop:1 #80DEEA);
+                color: #00838F;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 32px;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: 'Segoe UI', Arial;
+                min-width: 140px;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #80DEEA, stop:1 #4DD0E1);
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4DD0E1, stop:1 #26C6DA);
+            }
+        """
 
 class ReservationDialog(BaseDialog):
     """Diálogo para crear reservas con tabla de escenarios disponibles"""
@@ -2042,19 +2139,19 @@ class PaymentDialog(BaseDialog):
             return
         
         if not name:
-            QMessageBox.warning(self, "Error", "Por favor ingresa el nombre del titular")
+            show_styled_message(self, tr("error"), tr("payment_error_name"), "warning")
             return
         
         if not expiry or "/" not in expiry:
-            QMessageBox.warning(self, "Error", "Por favor ingresa la fecha de expiración (MM/AA)")
+            show_styled_message(self, tr("error"), tr("payment_error_expiry"), "warning")
             return
         
         if not cvv or len(cvv) != 3 or not cvv.isdigit():
-            QMessageBox.warning(self, "Error", "Por favor ingresa un CVV válido (3 dígitos)")
+            show_styled_message(self, tr("error"), tr("payment_error_cvv"), "warning")
             return
         
         # Simular procesamiento del pago
-        QMessageBox.information(self, "Éxito", f"¡Pago de ${self.amount:.2f} procesado exitosamente!\n\nGracias por tu compra.")
+        show_styled_message(self, tr("success"), tr("payment_success_message", amount=f"{self.amount:.2f}"), "information")
         self.payment_successful = True
         self.accept()
 
@@ -2344,6 +2441,29 @@ class WelcomeWidget(BasePage):
         
         # Conectar a cambios de idioma
         get_language_manager().language_changed.connect(self.update_ui)
+    
+    @staticmethod
+    def get_button_style():
+        return """
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #52B3D9, stop:1 #2980B9);
+                color: #FFFFFF;
+                border: none;
+                border-radius: 10px;
+                padding: 15px 40px;
+                font-weight: bold;
+                font-size: 15px;
+                font-family: 'Segoe UI', Arial;
+                min-width: 200px;
+                min-height: 50px;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2980B9, stop:1 #1a5a7f);
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a5a7f, stop:1 #0d3a52);
+            }
+        """
     
     def init_ui(self):
         layout = QVBoxLayout()
