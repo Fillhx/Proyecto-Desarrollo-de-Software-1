@@ -230,7 +230,7 @@ class LoginWidget(BasePage):
         left_panel = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setAlignment(Qt.AlignCenter)
-        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setContentsMargins(40, 40, 40, 40)
         
         image_label = QLabel()
         image_label.setAlignment(Qt.AlignCenter)
@@ -246,18 +246,18 @@ class LoginWidget(BasePage):
         # Panel derecho (formulario)
         right_panel = QWidget()
         right_layout = QVBoxLayout()
-        right_layout.setSpacing(10)
-        right_layout.setContentsMargins(30, 20, 30, 20)
+        right_layout.setSpacing(12)
+        right_layout.setContentsMargins(50, 40, 50, 40)
         
         # Título
         self.title = QLabel(tr("login_title"))
-        title_font = QFont("Segoe UI", 20, QFont.Bold)
+        title_font = QFont("Segoe UI", 24, QFont.Bold)
         self.title.setFont(title_font)
         self.title.setStyleSheet("color: white;")
         self.title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(self.title)
         
-        right_layout.addSpacing(10)
+        right_layout.addSpacing(15)
         
         # Email/Usuario
         self.email_label = QLabel(tr("login_email"))
@@ -282,30 +282,30 @@ class LoginWidget(BasePage):
         self.password_input.setMinimumHeight(34)
         right_layout.addWidget(self.password_input)
         
-        right_layout.addSpacing(8)
+        right_layout.addSpacing(12)
         
         # Botones
         buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(8)
+        buttons_layout.setSpacing(10)
         buttons_layout.setAlignment(Qt.AlignCenter)
         
         self.next_btn = QPushButton(tr("login_next"))
         self.next_btn.setStyleSheet(self.get_button_style())
-        self.next_btn.setMinimumWidth(120)
-        self.next_btn.setMinimumHeight(34)
+        self.next_btn.setMinimumWidth(150)
+        self.next_btn.setMinimumHeight(40)
         self.next_btn.clicked.connect(self.on_login)
         buttons_layout.addWidget(self.next_btn)
         
         self.back_btn = QPushButton(tr("login_back"))
         self.back_btn.setStyleSheet(self.get_button_style())
-        self.back_btn.setMinimumWidth(120)
-        self.back_btn.setMinimumHeight(34)
+        self.back_btn.setMinimumWidth(150)
+        self.back_btn.setMinimumHeight(40)
         self.back_btn.clicked.connect(self.on_back)
         buttons_layout.addWidget(self.back_btn)
         
         right_layout.addLayout(buttons_layout)
         
-        right_layout.addSpacing(8)
+        right_layout.addSpacing(12)
         
         # Link a registro
         self.register_label = QLabel(tr("login_register_text"))
@@ -496,7 +496,7 @@ class RegisterWidget(BasePage):
         left_panel = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setAlignment(Qt.AlignCenter)
-        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setContentsMargins(40, 40, 40, 40)
         
         image_label = QLabel()
         image_label.setAlignment(Qt.AlignCenter)
@@ -512,18 +512,18 @@ class RegisterWidget(BasePage):
         # Panel derecho (formulario)
         right_panel = QWidget()
         right_layout = QVBoxLayout()
-        right_layout.setSpacing(8)
-        right_layout.setContentsMargins(30, 20, 30, 20)
+        right_layout.setSpacing(10)
+        right_layout.setContentsMargins(50, 40, 50, 40)
         
         # Título
         self.title = QLabel(tr("register_title"))
-        title_font = QFont("Segoe UI", 20, QFont.Bold)
+        title_font = QFont("Segoe UI", 24, QFont.Bold)
         self.title.setFont(title_font)
         self.title.setStyleSheet("color: white;")
         self.title.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(self.title)
         
-        right_layout.addSpacing(8)
+        right_layout.addSpacing(10)
         
         # Nombre
         self.name_label = QLabel(tr("register_name"))
@@ -570,24 +570,24 @@ class RegisterWidget(BasePage):
         self.password_input.setMinimumHeight(30)
         right_layout.addWidget(self.password_input)
         
-        right_layout.addSpacing(8)
+        right_layout.addSpacing(10)
         
         # Botones
         buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(8)
+        buttons_layout.setSpacing(10)
         buttons_layout.setAlignment(Qt.AlignCenter)
         
         self.next_btn = QPushButton(tr("register_next"))
         self.next_btn.setStyleSheet(self.get_button_style())
-        self.next_btn.setMinimumWidth(120)
-        self.next_btn.setMinimumHeight(34)
+        self.next_btn.setMinimumWidth(150)
+        self.next_btn.setMinimumHeight(40)
         self.next_btn.clicked.connect(self.on_register)
         buttons_layout.addWidget(self.next_btn)
         
         self.back_btn = QPushButton(tr("register_back"))
         self.back_btn.setStyleSheet(self.get_button_style())
-        self.back_btn.setMinimumWidth(120)
-        self.back_btn.setMinimumHeight(34)
+        self.back_btn.setMinimumWidth(150)
+        self.back_btn.setMinimumHeight(40)
         self.back_btn.clicked.connect(self.on_back)
         buttons_layout.addWidget(self.back_btn)
         
@@ -782,67 +782,71 @@ class AdminDashboard(BasePage):
     def init_ui(self):
         # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(16, 16, 16, 16)
-        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setSpacing(16)
         
         # Header con rol
         header_layout = QHBoxLayout()
         self.header_label = QLabel(tr("admin_label"))
-        self.header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
+        self.header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 12px; font-weight: bold;")
         header_layout.addStretch()
         header_layout.addWidget(self.header_label)
         main_layout.addLayout(header_layout)
 
         # Título
         self.title = QLabel(tr("admin_title"))
-        title_font = QFont("Segoe UI", 20, QFont.Bold)
+        title_font = QFont("Segoe UI", 24, QFont.Bold)
         self.title.setFont(title_font)
         self.title.setStyleSheet("color: white;")
         self.title.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(self.title)
 
-        main_layout.addSpacing(12)
+        main_layout.addSpacing(20)
         
         # Sección central con botones
         center_layout = QVBoxLayout()
-        center_layout.setSpacing(12)
+        center_layout.setSpacing(16)
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Botón NEW STAGES
         self.new_stages_btn = QPushButton(tr("admin_new_stages"))
         self.new_stages_btn.setStyleSheet(self.get_button_style())
-        self.new_stages_btn.setMinimumWidth(160)
+        self.new_stages_btn.setMinimumWidth(200)
+        self.new_stages_btn.setMinimumHeight(45)
         self.new_stages_btn.clicked.connect(self.on_new_stages)
         center_layout.addWidget(self.new_stages_btn, alignment=Qt.AlignCenter)
         
         # Botón STAGES INFO
         self.stages_info_btn = QPushButton(tr("admin_stages_info"))
         self.stages_info_btn.setStyleSheet(self.get_button_style())
-        self.stages_info_btn.setMinimumWidth(160)
+        self.stages_info_btn.setMinimumWidth(200)
+        self.stages_info_btn.setMinimumHeight(45)
         self.stages_info_btn.clicked.connect(self.on_stages_info)
         center_layout.addWidget(self.stages_info_btn, alignment=Qt.AlignCenter)
         
         # Botón RESERVATIONS
         self.reservations_btn = QPushButton(tr("admin_reservations"))
         self.reservations_btn.setStyleSheet(self.get_button_style())
-        self.reservations_btn.setMinimumWidth(160)
+        self.reservations_btn.setMinimumWidth(200)
+        self.reservations_btn.setMinimumHeight(45)
         self.reservations_btn.clicked.connect(self.on_reservations)
         center_layout.addWidget(self.reservations_btn, alignment=Qt.AlignCenter)
         
         # Botón Back to login
         self.back_btn = QPushButton(tr("admin_back"))
         self.back_btn.setStyleSheet(self.get_button_style())
-        self.back_btn.setMinimumWidth(160)
+        self.back_btn.setMinimumWidth(200)
+        self.back_btn.setMinimumHeight(45)
         self.back_btn.clicked.connect(self.on_logout)
         center_layout.addWidget(self.back_btn, alignment=Qt.AlignCenter)
         
         main_layout.addLayout(center_layout)
         
-        main_layout.addSpacing(12)
+        main_layout.addSpacing(20)
 
         # Información de usuario (compacta)
         self.user_info = QLabel(tr("admin_session", name=self.user_name))
-        self.user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 11px;")
+        self.user_info.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 12px;")
         self.user_info.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(self.user_info)
 
@@ -1618,70 +1622,67 @@ class UserDashboard(BasePage):
     
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(16)
         
         # Header con rol
         header_layout = QHBoxLayout()
         self.header_label = QLabel(tr("user_label"))
-        self.header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 11px; font-weight: bold;")
+        self.header_label.setStyleSheet("color: rgba(255,255,255,180); font-size: 12px; font-weight: bold;")
         header_layout.addStretch()
         header_layout.addWidget(self.header_label)
         layout.addLayout(header_layout)
 
         # Título
         self.title = QLabel(tr("user_title"))
-        title_font = QFont("Segoe UI", 20, QFont.Bold)
+        title_font = QFont("Segoe UI", 24, QFont.Bold)
         self.title.setFont(title_font)
         self.title.setStyleSheet("color: white;")
         self.title.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.title)
 
-        layout.addSpacing(12)
+        layout.addSpacing(20)
         
         # Sección central con botones (Primera fila)
-        center_layout = QHBoxLayout()
+        center_layout = QVBoxLayout()
         center_layout.setSpacing(16)
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Botón RESERVE
         self.reserve_btn = QPushButton(tr("user_reserve"))
         self.reserve_btn.setStyleSheet(self.get_button_style())
-        self.reserve_btn.setMinimumWidth(140)
+        self.reserve_btn.setMinimumWidth(180)
+        self.reserve_btn.setMinimumHeight(45)
         self.reserve_btn.clicked.connect(self.on_reserve)
-        center_layout.addWidget(self.reserve_btn)
+        center_layout.addWidget(self.reserve_btn, alignment=Qt.AlignCenter)
         
         # Botón RESERVATIONS
         self.reservations_btn = QPushButton(tr("user_my_reservations"))
         self.reservations_btn.setStyleSheet(self.get_button_style())
-        self.reservations_btn.setMinimumWidth(140)
+        self.reservations_btn.setMinimumWidth(180)
+        self.reservations_btn.setMinimumHeight(45)
         self.reservations_btn.clicked.connect(self.on_my_reservations)
-        center_layout.addWidget(self.reservations_btn)
+        center_layout.addWidget(self.reservations_btn, alignment=Qt.AlignCenter)
+        
+        # Botón History
+        self.history_btn = QPushButton(tr("user_history"))
+        self.history_btn.setStyleSheet(self.get_button_style())
+        self.history_btn.setMinimumWidth(180)
+        self.history_btn.setMinimumHeight(45)
+        self.history_btn.clicked.connect(self.on_history)
+        center_layout.addWidget(self.history_btn, alignment=Qt.AlignCenter)
         
         layout.addLayout(center_layout)
         
-        # Segunda fila con botón de historial
-        history_layout = QHBoxLayout()
-        history_layout.setSpacing(16)
-        history_layout.setAlignment(Qt.AlignCenter)
-        
-        self.history_btn = QPushButton(tr("user_history"))
-        self.history_btn.setStyleSheet(self.get_button_style())
-        self.history_btn.setMinimumWidth(140)
-        self.history_btn.clicked.connect(self.on_history)
-        history_layout.addWidget(self.history_btn)
-        
-        layout.addLayout(history_layout)
-        
-        layout.addSpacing(12)
+        layout.addSpacing(20)
 
         # Botón Back to login (compacto)
         bottom_layout = QHBoxLayout()
         bottom_layout.setAlignment(Qt.AlignCenter)
         self.logout_btn = QPushButton(tr("user_back"))
         self.logout_btn.setStyleSheet(self.get_button_style())
-        self.logout_btn.setMinimumWidth(140)
-        self.logout_btn.setMaximumHeight(34)
+        self.logout_btn.setMinimumWidth(180)
+        self.logout_btn.setMinimumHeight(45)
         self.logout_btn.clicked.connect(self.on_logout)
         bottom_layout.addWidget(self.logout_btn)
         layout.addLayout(bottom_layout)
@@ -2754,13 +2755,13 @@ class WelcomeWidget(BasePage):
     
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(60, 60, 60, 60)
-        layout.setSpacing(20)
+        layout.setContentsMargins(80, 80, 80, 80)
+        layout.setSpacing(25)
         layout.setAlignment(Qt.AlignCenter)
         
         # Título
         self.title = QLabel("SGED RANYAVE")
-        title_font = QFont("Arial", 36, QFont.Bold)
+        title_font = QFont("Arial", 42, QFont.Bold)
         self.title.setFont(title_font)
         self.title.setStyleSheet("color: white;")
         self.title.setAlignment(Qt.AlignCenter)
@@ -2768,24 +2769,24 @@ class WelcomeWidget(BasePage):
         
         # Subtítulo
         self.subtitle = QLabel("¡Bienvenido a Ranyave!")
-        subtitle_font = QFont("Arial", 16)
+        subtitle_font = QFont("Arial", 18)
         self.subtitle.setFont(subtitle_font)
         self.subtitle.setStyleSheet("color: white;")
         self.subtitle.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.subtitle)
         
-        layout.addSpacing(40)
+        layout.addSpacing(50)
         
         # Botones
         self.login_btn = QPushButton("Iniciar Sesión")
         self.login_btn.setStyleSheet(self.get_button_style())
-        self.login_btn.setMinimumWidth(250)
+        self.login_btn.setMinimumWidth(280)
         self.login_btn.clicked.connect(self.parent_window.show_login)
         layout.addWidget(self.login_btn, alignment=Qt.AlignCenter)
         
         self.register_btn = QPushButton("Registrarse")
         self.register_btn.setStyleSheet(self.get_button_style())
-        self.register_btn.setMinimumWidth(250)
+        self.register_btn.setMinimumWidth(280)
         self.register_btn.clicked.connect(self.parent_window.show_register)
         layout.addWidget(self.register_btn, alignment=Qt.AlignCenter)
         
@@ -2811,7 +2812,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SGED RANYAVE")
-        self.setGeometry(100, 100, 1200, 700)
+        self.setGeometry(100, 100, 1400, 850)
         
         # Obtener gestor de idiomas
         self.language_manager = get_language_manager()

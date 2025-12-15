@@ -18,9 +18,9 @@ QPushButton {
     background-color: #ffffff;
     color: #0f1724;
     border-radius: 8px;
-    padding: 6px 14px;
+    padding: 8px 18px;
     border: 0px;
-    min-height: 30px;
+    min-height: 34px;
 }
 QPushButton:hover {
     background-color: #f3f6fb;
@@ -32,10 +32,10 @@ QPushButton:pressed {
 QLineEdit, QComboBox, QDateEdit, QTimeEdit, QSpinBox {
     background-color: #0f1724;
     border: 1px solid #2b445f;
-    padding: 6px 8px;
+    padding: 8px 12px;
     border-radius: 6px;
     color: #e6eef8;
-    min-height: 26px;
+    min-height: 30px;
 }
 
 QTableWidget {
@@ -45,20 +45,20 @@ QTableWidget {
     border: 0px;
 }
 QTableWidget::item {
-    padding: 6px 8px;
+    padding: 8px 12px;
 }
 
 QHeaderView::section {
     background-color: #dbeaf7;
     color: #0f1724;
-    padding: 6px 8px;
+    padding: 8px 12px;
     border: 0px;
     font-weight: 600;
 }
 
-/* Make dialogs and forms more compact */
+/* Make dialogs and forms more spacious */
 QDialog, QWidget {
-    spacing: 6px;
+    spacing: 8px;
 }
 
 /* Reduce default spacing for form layouts */
@@ -79,6 +79,6 @@ QLabel#appTitle, QLabel[role="title"] {
 
 /* Compact table cells */
 QTableWidget::item {
-    padding: 6px 10px;
+    padding: 8px 12px;
 }
 
